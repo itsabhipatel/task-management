@@ -53,7 +53,7 @@ public class TaskService {
         return convertToResponseDto(task);
     }
 
-    public Page<TaskResponseDto> getPaginatedTasks(Pageable pageable) {
+    public List<TaskResponseDto> getPaginatedTasks(Pageable pageable) {
         Page<Task> taskPage = taskRepository.findAll(pageable);
         List<TaskResponseDto> taskResponseDtos = new ArrayList<>();
 
@@ -61,7 +61,7 @@ public class TaskService {
             taskResponseDtos.add(convertToResponseDto(task));
         }
 
-        return new PageImpl<>(taskResponseDtos, pageable, taskPage.getTotalElements());
+        return taskResponseDtos;
     }
 
     public List<TaskResponseDto> getTasksByStatus(String status) {
@@ -75,10 +75,10 @@ public class TaskService {
         return convertToResponseDtoList(tasks);
     }
 
-    public Page<TaskResponseDto> getPaginatedAndSortedTasks(int page,
+    public List<TaskResponseDto> getPaginatedAndSortedTasks(int page,
                                                             int size,
-                                                            List<String> fields) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(fields.toArray(new String[0])));
+                                                            String field) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(field));
         return getPaginatedTasks(pageable);
     }
 

@@ -36,7 +36,7 @@ public class TaskController {
 
     @GetMapping("/page")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<TaskResponseDto> getPaginatedTasks(
+    public List<TaskResponseDto> getPaginatedTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
@@ -60,8 +60,9 @@ public class TaskController {
 
     @GetMapping("/page-and-sort")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<TaskResponseDto> getPaginatedAndSortedTasks(
-            @RequestParam(defaultValue = "0") int page,
+    public List<TaskResponseDto> getPaginatedAndSortedTasks(
+            @
+            RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "id") List<String> fields) {
 
