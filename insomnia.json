@@ -1,0 +1,104 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-05-05T00:00:00.000Z",
+  "__export_source": "chatgpt",
+  "resources": [
+    {
+      "_id": "wrk_task_mgmt",
+      "_type": "workspace",
+      "name": "Task Management API",
+      "description": ""
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_task_mgmt",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080"
+      }
+    },
+
+    {
+      "_id": "req_get_all",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get All Tasks",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/all"
+    },
+    {
+      "_id": "req_get_by_id",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get Task By ID",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/by-id/1"
+    },
+    {
+      "_id": "req_get_by_status",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get Tasks By Status",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/by-status/OPEN"
+    },
+    {
+      "_id": "req_create",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Create Task",
+      "method": "POST",
+      "url": "{{ base_url }}/api/tasks/create",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"New Task\",\n  \"status\": \"OPEN\",\n  \"employeeId\": 1,\n  \"categoryId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_update",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Update Task",
+      "method": "PUT",
+      "url": "{{ base_url }}/api/tasks/update/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Updated Task\",\n  \"status\": \"IN_PROGRESS\",\n  \"employeeId\": 1,\n  \"categoryId\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_delete",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Delete Task",
+      "method": "DELETE",
+      "url": "{{ base_url }}/api/tasks/delete/1"
+    },
+    {
+      "_id": "req_pagination",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get Paginated Tasks",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/page?page=0&size=5"
+    },
+    {
+      "_id": "req_sort",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get Sorted Tasks",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/sort?fields=id,title"
+    },
+    {
+      "_id": "req_page_sort",
+      "_type": "request",
+      "parentId": "wrk_task_mgmt",
+      "name": "Get Paginated + Sorted Tasks",
+      "method": "GET",
+      "url": "{{ base_url }}/api/tasks/page-and-sort?page=0&size=5&fields=id,title"
+    }
+  ]
+}
