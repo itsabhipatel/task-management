@@ -61,8 +61,7 @@ public class TaskController {
     @GetMapping("/page-and-sort")
     @PreAuthorize("hasRole('ADMIN')")
     public List<TaskResponseDto> getPaginatedAndSortedTasks(
-            @
-            RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "id") List<String> fields) {
 
@@ -85,7 +84,7 @@ public class TaskController {
         return taskService.createTask(taskRequestDto);
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/Aupdate/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
                                                       @RequestBody TaskRequestDto taskRequestDto) {
         TaskResponseDto task = taskService.updateTask(id, taskRequestDto);

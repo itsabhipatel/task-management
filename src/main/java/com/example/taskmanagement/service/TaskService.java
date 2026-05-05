@@ -77,8 +77,8 @@ public class TaskService {
 
     public List<TaskResponseDto> getPaginatedAndSortedTasks(int page,
                                                             int size,
-                                                            String field) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(field));
+                                                            List<String> fields) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(fields.toArray(new String[0])));
         return getPaginatedTasks(pageable);
     }
 
