@@ -44,7 +44,9 @@ public class DataInitializer {
                 employeeRepository.saveAll(List.of(
                         createEmployee("Abhi Patel"),
                         createEmployee("Neha Sharma"),
-                        createEmployee("Rahul Mehta")
+                        createEmployee("Rahul Mehta"),
+                        createEmployee("Priya Nair"),
+                        createEmployee("Amit Shah")
                 ));
             }
 
@@ -56,7 +58,13 @@ public class DataInitializer {
                         createTask("Build login API", "IN_PROGRESS", employees.get(0), categories.get(0), 2),
                         createTask("Write JWT filter tests", "TODO", employees.get(1), categories.get(1), 1),
                         createTask("Prepare API documentation", "DONE", employees.get(2), categories.get(2), 4),
-                        createTask("Review task sorting endpoint", "TODO", employees.get(0), categories.get(0), 0)
+                        createTask("Review task sorting endpoint", "TODO", employees.get(0), categories.get(0), 0),
+                        createTask("Create task pagination API", "DONE", employees.get(3), categories.get(0), 5),
+                        createTask("Test H2 database setup", "IN_PROGRESS", employees.get(4), categories.get(1), 3),
+                        createTask("Update Swagger security docs", "TODO", employees.get(2), categories.get(2), 6),
+                        createTask("Fix task update validation", "TODO", employees.get(1), categories.get(0), 7),
+                        createTask("Check authorization errors", "DONE", employees.get(3), categories.get(1), 8),
+                        createTask("Clean demo test cases", "IN_PROGRESS", employees.get(4), categories.get(2), 9)
                 ));
             }
         };

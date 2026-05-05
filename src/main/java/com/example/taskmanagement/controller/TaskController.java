@@ -29,37 +29,46 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<TaskResponseDto> getAllTasks() {
         return taskService.getAllTasks();
     }
 
-    @GetMapping("/pagination")
+    @GetMapping("/page")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<TaskResponseDto> getTasksByPage(
+    public Page<TaskResponseDto> getPaginatedTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return taskService.getTasksByPage(pageable);
+        return taskService.getPaginatedTasks(pageable);
     }
 
-    @GetMapping("/status/{status}")
+    @GetMapping("/by-status/{status}")
     public List<TaskResponseDto> getTasksByStatus(@PathVariable String status) {
         return taskService.getTasksByStatus(status);
     }
 
     @GetMapping("/sort")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<TaskResponseDto> getTasksWithSorting(
-            @RequestParam String fieldName,
-            @RequestParam(defaultValue = "asc") String direction) {
+    public List<TaskResponseDto> getSortedTasks(
+            @RequestParam(defaultValue = "id") List<String> fields) {
 
-        return taskService.getTasksWithSorting(fieldName, direction);
+        return taskService.getSortedTasks(fields);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/page-and-sort")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<TaskResponseDto> getPaginatedAndSortedTasks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") List<String> fields) {
+
+        return taskService.getPaginatedAndSortedTasks(page, size, fields);
+    }
+
+    @GetMapping("/by-id/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
         TaskResponseDto task = taskService.getTaskById(id);
 
@@ -70,12 +79,12 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @PostMapping
+    @PostMapping("/create")
     public TaskResponseDto createTask(@RequestBody TaskRequestDto taskRequestDto) {
         return taskService.createTask(taskRequestDto);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
                                                       @RequestBody TaskRequestDto taskRequestDto) {
         TaskResponseDto task = taskService.updateTask(id, taskRequestDto);
@@ -87,7 +96,7 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         boolean deleted = taskService.deleteTask(id);
 

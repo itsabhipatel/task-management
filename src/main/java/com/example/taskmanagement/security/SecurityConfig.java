@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .accessDeniedHandler(customAccessDeniedHandler));
         http.authorizeHttpRequests(requests -> requests
                 .requestMatchers("/api/auth/login", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-                .requestMatchers("/api/tasks/pagination", "/api/tasks/sort").hasRole("ADMIN")
+                .requestMatchers("/api/tasks/page", "/api/tasks/sort", "/api/tasks/page-and-sort").hasRole("ADMIN")
                 .anyRequest().hasAnyRole("USER", "ADMIN"));
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

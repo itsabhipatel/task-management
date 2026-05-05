@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -52,7 +53,7 @@ public class TaskService {
         return convertToResponseDto(task);
     }
 
-    public Page<TaskResponseDto> getTasksByPage(Pageable pageable) {
+    public Page<TaskResponseDto> getPaginatedTasks(Pageable pageable) {
         Page<Task> taskPage = taskRepository.findAll(pageable);
         List<TaskResponseDto> taskResponseDtos = new ArrayList<>();
 
@@ -68,17 +69,17 @@ public class TaskService {
         return convertToResponseDtoList(tasks);
     }
 
-    public List<TaskResponseDto> getTasksWithSorting(String fieldName, String direction) {
-        Sort sort;
-
-        if ("desc".equalsIgnoreCase(direction)) {
-            sort = Sort.by(fieldName).descending();
-        } else {
-            sort = Sort.by(fieldName).ascending();
-        }
-
+    public List<TaskResponseDto> getSortedTasks(List<String> fields) {
+        Sort sort = Sort.by(fields.toArray(new String[0]));
         List<Task> tasks = taskRepository.findAll(sort);
         return convertToResponseDtoList(tasks);
+    }
+
+    public Page<TaskResponseDto> getPaginatedAndSortedTasks(int page,
+                                                            int size,
+                                                            List<String> fields) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(fields.toArray(new String[0])));
+        return getPaginatedTasks(pageable);
     }
 
     public TaskResponseDto createTask(TaskRequestDto taskRequestDto) {
