@@ -31,29 +31,40 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // http.csrf(AbstractHttpConfigurer::disable);
-        // http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
-        // http.httpBasic(AbstractHttpConfigurer::disable);
-        // http.formLogin(AbstractHttpConfigurer::disable);
-        // http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        // http.exceptionHandling(exception -> exception
-        //         .authenticationEntryPoint(customAuthenticationEntryPoint)
-        //         .accessDeniedHandler(customAccessDeniedHandler));
-        // http.authorizeHttpRequests(requests -> requests
-        //         .requestMatchers("/api/auth/login", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-        //         .requestMatchers("/api/tasks/page", "/api/tasks/sort", "/api/tasks/page-and-sort").hasRole("ADMIN")
-        //         .anyRequest().hasAnyRole("USER", "ADMIN"));
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // return http.build();
-
         http
-        .csrf(csrf -> csrf.disable()) // disable CSRF
+        .csrf(csrf -> csrf.disable())
+        .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint(customAuthenticationEntryPoint)
+            .accessDeniedHandler(customAccessDeniedHandler)
+        )
+
         .authorizeHttpRequests(auth -> auth
-            .anyRequest().permitAll() // allow all requests
-        );
+            .requestMatchers(
+                "/api/auth/login",
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/h2-console/**"
+            ).permitAll()
+
+            .requestMatchers(
+                "/api/tasks/page",
+                "/api/tasks/sort",
+                "/api/tasks/page-and-sort"
+            ).hasRole("ADMIN")
+
+            .anyRequest().hasAnyRole("USER", "ADMIN")
+        )
+
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+        .httpBasic(basic -> basic.disable())
+        .formLogin(form -> form.disable());
 
     return http.build();
+
     }
 
     @Bean
