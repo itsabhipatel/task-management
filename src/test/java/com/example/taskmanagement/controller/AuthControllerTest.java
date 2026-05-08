@@ -1,7 +1,6 @@
 package com.example.taskmanagement.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -9,17 +8,17 @@ import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
 import com.example.taskmanagement.security.JwtUtil;
 import java.util.List;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -35,42 +34,35 @@ class AuthControllerTest {
     @Mock
     private Authentication authentication;
 
+    @InjectMocks
     private AuthController authController;
 
-    @BeforeEach
-    void setUp() {
-        authController = new AuthController(authenticationManager, jwtUtil);
+    @Test
+    void loginReturnsTokenWhenCredentialsAreValid() {
+        LoginRequestDto request = request();
+        UserDetails user = new User("admin", "secret", List.of());
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(user);
+        when(jwtUtil.generateToken(user)).thenReturn("jwt-token");
+
+        ResponseEntity<LoginResponseDto> response = authController.login(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getToken()).isEqualTo("jwt-token");
     }
 
     @Test
-    void loginReturnsTokenForValidCredentials() {
+    void loginReturnsUnauthorizedWhenCredentialsAreInvalid() {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("bad"));
+
+        assertThat(authController.login(request()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    private LoginRequestDto request() {
         LoginRequestDto request = new LoginRequestDto();
         request.setUserId("admin");
         request.setPassword("admin123");
-        UserDetails userDetails = new User("admin", "password", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
-        when(jwtUtil.generateToken(userDetails)).thenReturn("jwt-token");
-
-        ResponseEntity<LoginResponseDto> response = authController.login(request);
-
-        assertEquals(200, response.getStatusCode().value());
-        assertNotNull(response.getBody());
-        assertEquals("jwt-token", response.getBody().getToken());
-    }
-
-    @Test
-    void loginReturnsUnauthorizedForBadCredentials() {
-        LoginRequestDto request = new LoginRequestDto();
-        request.setUserId("admin");
-        request.setPassword("wrong");
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Invalid credentials"));
-
-        ResponseEntity<LoginResponseDto> response = authController.login(request);
-
-        assertEquals(401, response.getStatusCode().value());
+        return request;
     }
 }

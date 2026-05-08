@@ -1,28 +1,22 @@
 package com.example.taskmanagement.security;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.AuthenticationEntryPoint;
 
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
@@ -34,64 +28,57 @@ class JwtAuthenticationFilterTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @Mock
-    private HttpServletRequest request;
-
-    @Mock
-    private HttpServletResponse response;
+    private AuthenticationEntryPoint authenticationEntryPoint;
 
     @Mock
     private FilterChain filterChain;
 
-    private JwtAuthenticationFilter filter;
-
-    @BeforeEach
-    void setUp() {
-        filter = new JwtAuthenticationFilter(jwtUtil, customUserDetailsService);
-        SecurityContextHolder.clearContext();
-    }
-
     @AfterEach
-    void tearDown() {
+    void clearContext() {
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    void filterSetsAuthenticationForValidToken() throws Exception {
-        UserDetails userDetails = new User("admin", "password", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
-        when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
-        when(jwtUtil.getUsernameFromToken("valid-token")).thenReturn("admin");
+    void continuesWithoutAuthenticationWhenHeaderIsMissing() throws Exception {
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil, customUserDetailsService, authenticationEntryPoint);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    void authenticatesValidBearerToken() throws Exception {
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil, customUserDetailsService, authenticationEntryPoint);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer token");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        UserDetails userDetails = User.withUsername("admin").password("password").roles("ADMIN").build();
+        when(jwtUtil.getUsernameFromToken("token")).thenReturn("admin");
         when(customUserDetailsService.loadUserByUsername("admin")).thenReturn(userDetails);
-        when(jwtUtil.validateToken("valid-token", userDetails)).thenReturn(true);
+        when(jwtUtil.validateToken("token", userDetails)).thenReturn(true);
 
-        filter.doFilter(request, response, filterChain);
+        filter.doFilterInternal(request, response, filterChain);
 
-        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals("admin", SecurityContextHolder.getContext().getAuthentication().getName());
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("admin");
         verify(filterChain).doFilter(request, response);
     }
 
     @Test
-    void filterContinuesWhenAuthorizationHeaderIsMissing() throws Exception {
-        when(request.getHeader("Authorization")).thenReturn(null);
+    void sendsInvalidTokenToEntryPointAndStopsChain() throws Exception {
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtUtil, customUserDetailsService, authenticationEntryPoint);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer bad");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(jwtUtil.getUsernameFromToken("bad")).thenThrow(new IllegalArgumentException("bad"));
 
-        filter.doFilter(request, response, filterChain);
+        filter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(jwtUtil, never()).getUsernameFromToken("valid-token");
-        verify(filterChain).doFilter(request, response);
-    }
-
-    @Test
-    void filterReturnsUnauthorizedForInvalidToken() throws Exception {
-        StringWriter writer = new StringWriter();
-        when(request.getHeader("Authorization")).thenReturn("Bearer invalid-token");
-        when(jwtUtil.getUsernameFromToken("invalid-token")).thenThrow(new RuntimeException("bad token"));
-        when(response.getWriter()).thenReturn(new PrintWriter(writer));
-
-        filter.doFilter(request, response, filterChain);
-
-        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        assertEquals("{\"message\":\"Invalid or expired JWT token.\"}", writer.toString());
+        verify(authenticationEntryPoint).commence(org.mockito.ArgumentMatchers.eq(request),
+                org.mockito.ArgumentMatchers.eq(response), org.mockito.ArgumentMatchers.any());
         verify(filterChain, never()).doFilter(request, response);
     }
 }

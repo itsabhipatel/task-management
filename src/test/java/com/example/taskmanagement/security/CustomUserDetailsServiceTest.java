@@ -1,16 +1,15 @@
 package com.example.taskmanagement.security;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.entity.AppUser;
 import com.example.taskmanagement.repository.AppUserRepository;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.function.Executable;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,39 +21,30 @@ class CustomUserDetailsServiceTest {
     @Mock
     private AppUserRepository appUserRepository;
 
-    private CustomUserDetailsService userDetailsService;
-
-    @BeforeEach
-    void setUp() {
-        userDetailsService = new CustomUserDetailsService(appUserRepository);
-    }
+    @InjectMocks
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
-    void loadUserByUsernameReturnsUserDetails() {
+    void loadUserByUsernameReturnsSpringUser() {
         AppUser appUser = new AppUser();
         appUser.setUserId("admin");
-        appUser.setPassword("encoded-password");
+        appUser.setPassword("encoded");
         appUser.setRole("ADMIN");
         when(appUserRepository.findById("admin")).thenReturn(Optional.of(appUser));
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername("admin");
+        UserDetails result = customUserDetailsService.loadUserByUsername("admin");
 
-        assertEquals("admin", userDetails.getUsername());
-        assertEquals("encoded-password", userDetails.getPassword());
-        assertEquals("ROLE_ADMIN", userDetails.getAuthorities().iterator().next().getAuthority());
+        assertThat(result.getUsername()).isEqualTo("admin");
+        assertThat(result.getPassword()).isEqualTo("encoded");
+        assertThat(result.getAuthorities()).extracting("authority").containsExactly("ROLE_ADMIN");
     }
 
     @Test
     void loadUserByUsernameThrowsWhenMissing() {
         when(appUserRepository.findById("missing")).thenReturn(Optional.empty());
 
-        Executable executable = new Executable() {
-            @Override
-            public void execute() {
-                userDetailsService.loadUserByUsername("missing");
-            }
-        };
-
-        assertThrows(UsernameNotFoundException.class, executable);
+        assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername("missing"))
+                .isInstanceOf(UsernameNotFoundException.class)
+                .hasMessageContaining("missing");
     }
 }
