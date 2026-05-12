@@ -33,7 +33,6 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
         .csrf(csrf -> csrf.disable())
-        .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .exceptionHandling(ex -> ex
@@ -45,8 +44,7 @@ public class SecurityConfig {
             .requestMatchers(
                 "/api/auth/login",
                 "/swagger-ui/**",
-                "/v3/api-docs/**",
-                "/h2-console/**"
+                "/v3/api-docs/**"
             ).permitAll()
 
             .requestMatchers(
