@@ -29,7 +29,7 @@ class CustomUserDetailsServiceTest {
         AppUser appUser = new AppUser();
         appUser.setUserId("admin");
         appUser.setPassword("encoded");
-        appUser.setRole("ADMIN");
+        appUser.setRole("ROLE_ADMIN");
         when(appUserRepository.findById("admin")).thenReturn(Optional.of(appUser));
 
         UserDetails result = customUserDetailsService.loadUserByUsername("admin");

@@ -25,9 +25,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 
+        String role = appUser.getRole();
+        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
         return User.withUsername(appUser.getUserId())
                 .password(appUser.getPassword())
-                .roles(appUser.getRole())
+                .authorities(authority)
                 .build();
     }
 }

@@ -1,8 +1,6 @@
--- INSERT DATA
-
 INSERT INTO app_user (user_id, password, role) VALUES
-('admin', '$2a$10$Dow1a5S6Czv9Rk2v9w6f9eWgkGk6P2zH6lG5YQ3RrX6KZP8xF8Z8y', 'ROLE_ADMIN'),
-('user', '$2a$10$Dow1a5S6Czv9Rk2v9w6f9eWgkGk6P2zH6lG5YQ3RrX6KZP8xF8Z8y', 'ROLE_USER');
+('admin', '$2a$10$uUnS9TkG.ze7Hu9d5kgmQe..p8YbMq.j9HfpyVgUyntay5MYjHMaa', 'ROLE_ADMIN'),
+('user', '$2a$10$kdeC2R3GZ.reN9pQIV6WVuNSVpmdcK/CeRkZRB.05POevcbAJ/Xpe', 'ROLE_USER');
 
 INSERT INTO category (name) VALUES
 ('Development'),

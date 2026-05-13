@@ -81,4 +81,5 @@ class JwtAuthenticationFilterTest {
                 org.mockito.ArgumentMatchers.eq(response), org.mockito.ArgumentMatchers.any());
         verify(filterChain, never()).doFilter(request, response);
     }
+
 }
