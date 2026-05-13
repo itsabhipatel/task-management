@@ -1,68 +1,133 @@
 package com.example.taskmanagement.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
 import com.example.taskmanagement.security.JwtUtil;
+import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
 
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
-    private JwtUtil jwtUtil;
-
-    @Mock
-    private Authentication authentication;
-
-    @InjectMocks
-    private AuthController authController;
-
     @Test
-    void loginReturnsTokenWhenCredentialsAreValid() {
-        LoginRequestDto request = request();
-        UserDetails user = new User("admin", "secret", List.of());
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(user);
-        when(jwtUtil.generateToken(user)).thenReturn("jwt-token");
+    void shouldReturnTokenWhenCredentialsAreValid() {
+        AuthController authController = new AuthController(new SuccessfulAuthenticationManager(), new FixedJwtUtil());
 
-        ResponseEntity<LoginResponseDto> response = authController.login(request);
+        ResponseEntity<LoginResponseDto> response = authController.login(request("admin", "admin123"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().getToken()).isEqualTo("jwt-token");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("jwt-token", response.getBody().getToken());
     }
 
     @Test
-    void loginReturnsUnauthorizedWhenCredentialsAreInvalid() {
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("bad"));
+    void shouldReturnUnauthorizedWhenCredentialsAreInvalid() {
+        AuthController authController = new AuthController(new FailedAuthenticationManager(), new FixedJwtUtil());
 
-        assertThat(authController.login(request()).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        ResponseEntity<LoginResponseDto> response = authController.login(request("admin", "wrong"));
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
     }
 
-    private LoginRequestDto request() {
+    private LoginRequestDto request(String userId, String password) {
         LoginRequestDto request = new LoginRequestDto();
-        request.setUserId("admin");
-        request.setPassword("admin123");
+        request.setUserId(userId);
+        request.setPassword(password);
         return request;
+    }
+
+    private static class SuccessfulAuthenticationManager implements AuthenticationManager {
+
+        @Override
+        public Authentication authenticate(Authentication authentication) {
+            return new SuccessfulAuthentication();
+        }
+    }
+
+    private static class FailedAuthenticationManager implements AuthenticationManager {
+
+        @Override
+        public Authentication authenticate(Authentication authentication) {
+            throw new BadCredentialsException("Invalid credentials");
+        }
+    }
+
+    private static class SuccessfulAuthentication implements Authentication {
+
+        private boolean authenticated = true;
+
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return List.of();
+        }
+
+        @Override
+        public Object getCredentials() {
+            return null;
+        }
+
+        @Override
+        public Object getDetails() {
+            return null;
+        }
+
+        @Override
+        public Object getPrincipal() {
+            return new SimpleUserDetails();
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return authenticated;
+        }
+
+        @Override
+        public void setAuthenticated(boolean authenticated) {
+            this.authenticated = authenticated;
+        }
+
+        @Override
+        public String getName() {
+            return "admin";
+        }
+    }
+
+    private static class SimpleUserDetails implements UserDetails {
+
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return List.of();
+        }
+
+        @Override
+        public String getPassword() {
+            return "encoded";
+        }
+
+        @Override
+        public String getUsername() {
+            return "admin";
+        }
+    }
+
+    private static class FixedJwtUtil extends JwtUtil {
+
+        @Override
+        public String generateToken(UserDetails userDetails) {
+            return "jwt-token";
+        }
     }
 }

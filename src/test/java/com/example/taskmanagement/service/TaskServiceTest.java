@@ -1,6 +1,10 @@
 package com.example.taskmanagement.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,11 +22,11 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
@@ -42,92 +46,152 @@ class TaskServiceTest {
     private TaskService taskService;
 
     @Test
-    void getAllTasksMapsEntityDetails() {
-        Task task = task(1L, "Build API", "TODO", employee(2L, "Abhi"), category(3L, "Dev"));
+    void shouldReturnAllTasks() {
+        Task task = task(1L, "Build API", "TODO", employee(2L, "Abhi"), category(3L, "Development"));
         when(taskRepository.findAll()).thenReturn(List.of(task));
 
         List<TaskResponseDto> result = taskService.getAllTasks();
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo(1L);
-        assertThat(result.get(0).getEmployeeName()).isEqualTo("Abhi");
-        assertThat(result.get(0).getCategoryName()).isEqualTo("Dev");
+        assertEquals(1, result.size());
+        assertEquals("Build API", result.get(0).getTitle());
+        assertEquals("Abhi", result.get(0).getEmployeeName());
+        assertEquals("Development", result.get(0).getCategoryName());
     }
 
     @Test
-    void getTaskByIdReturnsNullWhenMissing() {
-        when(taskRepository.findById(9L)).thenReturn(Optional.empty());
+    void shouldReturnTaskById() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(task(1L, "Task", "DONE", null, null)));
 
-        assertThat(taskService.getTaskById(9L)).isNull();
+        TaskResponseDto result = taskService.getTaskById(1L);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("DONE", result.getStatus());
     }
 
     @Test
-    void getPaginatedAndSortedTasksUsesPageable() {
-        when(taskRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(task(1L, "A", "DONE", null, null))));
+    void shouldReturnNullWhenTaskDoesNotExist() {
+        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        List<TaskResponseDto> result = taskService.getPaginatedAndSortedTasks(1, 2, List.of("title"));
+        TaskResponseDto result = taskService.getTaskById(99L);
 
-        assertThat(result).hasSize(1);
-        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(taskRepository).findAll(captor.capture());
-        assertThat(captor.getValue().getPageNumber()).isEqualTo(1);
-        assertThat(captor.getValue().getPageSize()).isEqualTo(2);
-        assertThat(captor.getValue().getSort()).isEqualTo(Sort.by("title"));
+        assertNull(result);
     }
 
     @Test
-    void getTasksByStatusAndSortedTasksMapLists() {
-        when(taskRepository.findByStatus("TODO")).thenReturn(List.of(task(1L, "A", "TODO", null, null)));
-        when(taskRepository.findAll(Sort.by("status", "title"))).thenReturn(List.of(task(2L, "B", "DONE", null, null)));
+    void shouldReturnTasksByStatus() {
+        when(taskRepository.findByStatus("TODO")).thenReturn(List.of(task(1L, "Task", "TODO", null, null)));
 
-        assertThat(taskService.getTasksByStatus("TODO")).extracting(TaskResponseDto::getStatus).containsExactly("TODO");
-        assertThat(taskService.getSortedTasks(List.of("status", "title"))).extracting(TaskResponseDto::getTitle).containsExactly("B");
+        List<TaskResponseDto> result = taskService.getTasksByStatus("TODO");
+
+        assertEquals(1, result.size());
+        assertEquals("TODO", result.get(0).getStatus());
     }
 
     @Test
-    void createTaskLoadsEmployeeAndCategoryBeforeSaving() {
-        TaskRequestDto request = request("New task", "TODO", 5L, 6L);
-        Employee employee = employee(5L, "Neha");
-        Category category = category(6L, "Testing");
-        when(employeeRepository.findById(5L)).thenReturn(Optional.of(employee));
-        when(categoryRepository.findById(6L)).thenReturn(Optional.of(category));
+    void shouldReturnSortedTasks() {
+        when(taskRepository.findAll(Sort.by("title"))).thenReturn(List.of(task(1L, "A Task", "TODO", null, null)));
+
+        List<TaskResponseDto> result = taskService.getSortedTasks(List.of("title"));
+
+        assertEquals(1, result.size());
+        assertEquals("A Task", result.get(0).getTitle());
+    }
+
+    @Test
+    void shouldReturnPaginatedTasks() {
+        Pageable pageable = PageRequest.of(0, 2);
+        when(taskRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(task(1L, "Task", "TODO", null, null))));
+
+        List<TaskResponseDto> result = taskService.getPaginatedTasks(pageable);
+
+        assertEquals(1, result.size());
+        assertEquals("Task", result.get(0).getTitle());
+    }
+
+    @Test
+    void shouldReturnPaginatedAndSortedTasks() {
+        Pageable pageable = PageRequest.of(1, 3, Sort.by("status"));
+        when(taskRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(task(1L, "Task", "DONE", null, null))));
+
+        List<TaskResponseDto> result = taskService.getPaginatedAndSortedTasks(1, 3, List.of("status"));
+
+        assertEquals(1, result.size());
+        assertEquals("DONE", result.get(0).getStatus());
+    }
+
+    @Test
+    void shouldCreateTask() {
+        TaskRequestDto request = request("New task", "TODO", 1L, 2L);
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee(1L, "Neha")));
+        when(categoryRepository.findById(2L)).thenReturn(Optional.of(category(2L, "Testing")));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
-            Task saved = invocation.getArgument(0);
-            saved.setId(10L);
-            return saved;
+            Task savedTask = invocation.getArgument(0);
+            savedTask.setId(10L);
+            return savedTask;
         });
 
         TaskResponseDto result = taskService.createTask(request);
 
-        assertThat(result.getId()).isEqualTo(10L);
-        assertThat(result.getEmployeeId()).isEqualTo(5L);
-        assertThat(result.getCategoryId()).isEqualTo(6L);
+        assertNotNull(result);
+        assertEquals(10L, result.getId());
+        assertEquals("New task", result.getTitle());
+        assertEquals(1L, result.getEmployeeId());
+        assertEquals(2L, result.getCategoryId());
     }
 
     @Test
-    void updateTaskReturnsNullWhenMissingAndUpdatesWhenFound() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThat(taskService.updateTask(1L, request("Missing", "TODO", null, null))).isNull();
+    void shouldCreateTaskWithoutOptionalEmployeeAndCategory() {
+        TaskRequestDto request = request("New task", "TODO", null, null);
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Task existing = task(2L, "Old", "TODO", null, null);
-        when(taskRepository.findById(2L)).thenReturn(Optional.of(existing));
-        when(taskRepository.save(existing)).thenReturn(existing);
+        TaskResponseDto result = taskService.createTask(request);
 
-        TaskResponseDto result = taskService.updateTask(2L, request("Updated", "DONE", null, null));
-
-        assertThat(result.getTitle()).isEqualTo("Updated");
-        assertThat(result.getStatus()).isEqualTo("DONE");
+        assertEquals("New task", result.getTitle());
+        assertNull(result.getEmployeeId());
+        assertNull(result.getCategoryId());
     }
 
     @Test
-    void deleteTaskReturnsFalseWhenMissingAndDeletesWhenFound() {
-        Task task = task(4L, "Delete", "TODO", null, null);
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
-        when(taskRepository.findById(4L)).thenReturn(Optional.of(task));
+    void shouldUpdateTask() {
+        Task existingTask = task(5L, "Old", "TODO", null, null);
+        when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(existingTask)).thenReturn(existingTask);
 
-        assertThat(taskService.deleteTask(1L)).isFalse();
-        assertThat(taskService.deleteTask(4L)).isTrue();
+        TaskResponseDto result = taskService.updateTask(5L, request("Updated", "DONE", null, null));
+
+        assertNotNull(result);
+        assertEquals("Updated", result.getTitle());
+        assertEquals("DONE", result.getStatus());
+    }
+
+    @Test
+    void shouldReturnNullWhenUpdatingMissingTask() {
+        when(taskRepository.findById(5L)).thenReturn(Optional.empty());
+
+        TaskResponseDto result = taskService.updateTask(5L, request("Updated", "DONE", null, null));
+
+        assertNull(result);
+    }
+
+    @Test
+    void shouldDeleteTask() {
+        Task task = task(5L, "Task", "TODO", null, null);
+        when(taskRepository.findById(5L)).thenReturn(Optional.of(task));
+
+        boolean result = taskService.deleteTask(5L);
+
+        assertTrue(result);
         verify(taskRepository).delete(task);
+    }
+
+    @Test
+    void shouldReturnFalseWhenDeletingMissingTask() {
+        when(taskRepository.findById(5L)).thenReturn(Optional.empty());
+
+        boolean result = taskService.deleteTask(5L);
+
+        assertFalse(result);
     }
 
     private TaskRequestDto request(String title, String status, Long employeeId, Long categoryId) {
@@ -144,7 +208,7 @@ class TaskServiceTest {
         task.setId(id);
         task.setTitle(title);
         task.setStatus(status);
-        task.setCreatedDate(LocalDateTime.of(2026, 5, 9, 10, 0));
+        task.setCreatedDate(LocalDateTime.of(2026, 5, 13, 10, 0));
         task.setEmployee(employee);
         task.setCategory(category);
         return task;

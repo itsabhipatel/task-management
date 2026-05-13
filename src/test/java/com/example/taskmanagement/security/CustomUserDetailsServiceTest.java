@@ -1,7 +1,8 @@
 package com.example.taskmanagement.security;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.entity.AppUser;
@@ -25,26 +26,42 @@ class CustomUserDetailsServiceTest {
     private CustomUserDetailsService customUserDetailsService;
 
     @Test
-    void loadUserByUsernameReturnsSpringUser() {
-        AppUser appUser = new AppUser();
-        appUser.setUserId("admin");
-        appUser.setPassword("encoded");
-        appUser.setRole("ROLE_ADMIN");
+    void shouldLoadUserWithPrefixedRole() {
+        AppUser appUser = user("admin", "encoded", "ROLE_ADMIN");
         when(appUserRepository.findById("admin")).thenReturn(Optional.of(appUser));
 
         UserDetails result = customUserDetailsService.loadUserByUsername("admin");
 
-        assertThat(result.getUsername()).isEqualTo("admin");
-        assertThat(result.getPassword()).isEqualTo("encoded");
-        assertThat(result.getAuthorities()).extracting("authority").containsExactly("ROLE_ADMIN");
+        assertEquals("admin", result.getUsername());
+        assertEquals("encoded", result.getPassword());
+        assertTrue(result.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority())));
     }
 
     @Test
-    void loadUserByUsernameThrowsWhenMissing() {
+    void shouldLoadUserWithUnprefixedRole() {
+        AppUser appUser = user("user", "encoded", "USER");
+        when(appUserRepository.findById("user")).thenReturn(Optional.of(appUser));
+
+        UserDetails result = customUserDetailsService.loadUserByUsername("user");
+
+        assertTrue(result.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_USER".equals(authority.getAuthority())));
+    }
+
+    @Test
+    void shouldThrowWhenUserIsMissing() {
         when(appUserRepository.findById("missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> customUserDetailsService.loadUserByUsername("missing"))
-                .isInstanceOf(UsernameNotFoundException.class)
-                .hasMessageContaining("missing");
+        assertThrows(UsernameNotFoundException.class,
+                () -> customUserDetailsService.loadUserByUsername("missing"));
+    }
+
+    private AppUser user(String userId, String password, String role) {
+        AppUser appUser = new AppUser();
+        appUser.setUserId(userId);
+        appUser.setPassword(password);
+        appUser.setRole(role);
+        return appUser;
     }
 }

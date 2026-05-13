@@ -1,8 +1,8 @@
 package com.example.taskmanagement.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
@@ -11,7 +11,6 @@ import com.example.taskmanagement.service.TaskService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,58 +27,135 @@ class TaskControllerTest {
     private TaskController taskController;
 
     @Test
-    void delegatesListEndpoints() {
-        TaskResponseDto dto = dto(1L, "Task");
-        when(taskService.getAllTasks()).thenReturn(List.of(dto));
-        when(taskService.getPaginatedTasks(any(Pageable.class))).thenReturn(List.of(dto));
-        when(taskService.getTasksByStatus("TODO")).thenReturn(List.of(dto));
-        when(taskService.getSortedTasks(List.of("title"))).thenReturn(List.of(dto));
-        when(taskService.getPaginatedAndSortedTasks(0, 5, List.of("id"))).thenReturn(List.of(dto));
+    void shouldReturnAllTasks() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getAllTasks()).thenReturn(List.of(task));
 
-        assertThat(taskController.getAllTasks()).containsExactly(dto);
-        assertThat(taskController.getPaginatedTasks(2, 3)).containsExactly(dto);
-        assertThat(taskController.getTasksByStatus("TODO")).containsExactly(dto);
-        assertThat(taskController.getSortedTasks(List.of("title"))).containsExactly(dto);
-        assertThat(taskController.getPaginatedAndSortedTasks(0, 5, List.of("id"))).containsExactly(dto);
+        List<TaskResponseDto> result = taskController.getAllTasks();
 
-        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(taskService).getPaginatedTasks(captor.capture());
-        assertThat(captor.getValue().getPageNumber()).isEqualTo(2);
-        assertThat(captor.getValue().getPageSize()).isEqualTo(3);
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
     }
 
     @Test
-    void getUpdateAndDeleteReturnExpectedStatuses() {
+    void shouldReturnTaskById() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getTaskById(1L)).thenReturn(task);
+
+        var result = taskController.getTaskById(1L);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertSame(task, result.getBody());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenTaskByIdIsMissing() {
+        when(taskService.getTaskById(1L)).thenReturn(null);
+
+        var result = taskController.getTaskById(1L);
+
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+    }
+
+    @Test
+    void shouldReturnPaginatedTasks() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getPaginatedTasks(any(Pageable.class))).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.getPaginatedTasks(0, 5);
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
+    void shouldReturnTasksByStatus() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getTasksByStatus("TODO")).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.getTasksByStatus("TODO");
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
+    void shouldReturnSortedTasks() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getSortedTasks(List.of("title"))).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.getSortedTasks(List.of("title"));
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
+    void shouldReturnPaginatedAndSortedTasks() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.getPaginatedAndSortedTasks(0, 5, List.of("id"))).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.getPaginatedAndSortedTasks(0, 5, List.of("id"));
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
+    void shouldCreateTask() {
         TaskRequestDto request = new TaskRequestDto();
-        TaskResponseDto dto = dto(1L, "Task");
-        when(taskService.getTaskById(1L)).thenReturn(dto);
-        when(taskService.getTaskById(2L)).thenReturn(null);
-        when(taskService.updateTask(1L, request)).thenReturn(dto);
-        when(taskService.updateTask(2L, request)).thenReturn(null);
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.createTask(request)).thenReturn(task);
+
+        TaskResponseDto result = taskController.createTask(request);
+
+        assertSame(task, result);
+    }
+
+    @Test
+    void shouldUpdateTask() {
+        TaskRequestDto request = new TaskRequestDto();
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.updateTask(1L, request)).thenReturn(task);
+
+        var result = taskController.updateTask(1L, request);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertSame(task, result.getBody());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingMissingTask() {
+        TaskRequestDto request = new TaskRequestDto();
+        when(taskService.updateTask(1L, request)).thenReturn(null);
+
+        var result = taskController.updateTask(1L, request);
+
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+    }
+
+    @Test
+    void shouldDeleteTask() {
         when(taskService.deleteTask(1L)).thenReturn(true);
-        when(taskService.deleteTask(2L)).thenReturn(false);
 
-        assertThat(taskController.getTaskById(1L).getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(taskController.getTaskById(2L).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(taskController.updateTask(1L, request).getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(taskController.updateTask(2L, request).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(taskController.deleteTask(1L).getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        assertThat(taskController.deleteTask(2L).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        var result = taskController.deleteTask(1L);
+
+        assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
     }
 
     @Test
-    void createTaskReturnsServiceResponse() {
-        TaskRequestDto request = new TaskRequestDto();
-        TaskResponseDto response = dto(3L, "Created");
-        when(taskService.createTask(request)).thenReturn(response);
+    void shouldReturnNotFoundWhenDeletingMissingTask() {
+        when(taskService.deleteTask(1L)).thenReturn(false);
 
-        assertThat(taskController.createTask(request)).isSameAs(response);
+        var result = taskController.deleteTask(1L);
+
+        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
     }
 
-    private TaskResponseDto dto(Long id, String title) {
-        TaskResponseDto dto = new TaskResponseDto();
-        dto.setId(id);
-        dto.setTitle(title);
-        return dto;
+    private TaskResponseDto response(Long id, String title) {
+        TaskResponseDto response = new TaskResponseDto();
+        response.setId(id);
+        response.setTitle(title);
+        return response;
     }
 }

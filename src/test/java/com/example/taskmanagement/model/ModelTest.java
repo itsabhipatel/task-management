@@ -1,6 +1,8 @@
 package com.example.taskmanagement.model;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
@@ -13,48 +15,64 @@ import com.example.taskmanagement.entity.Task;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class ModelTest {
 
     @Test
-    void dtoGettersAndSettersWork() {
+    void shouldSetAndGetTaskRequestFields() {
         TaskRequestDto request = new TaskRequestDto();
-        request.setTitle("Title");
+        request.setTitle("Task");
         request.setStatus("TODO");
         request.setEmployeeId(1L);
         request.setCategoryId(2L);
 
-        TaskResponseDto response = new TaskResponseDto();
-        LocalDateTime created = LocalDateTime.of(2026, 5, 9, 12, 0);
-        response.setId(3L);
-        response.setTitle(request.getTitle());
-        response.setStatus(request.getStatus());
-        response.setCreatedDate(created);
-        response.setEmployeeId(request.getEmployeeId());
-        response.setEmployeeName("Abhi");
-        response.setCategoryId(request.getCategoryId());
-        response.setCategoryName("Dev");
-
-        LoginRequestDto loginRequest = new LoginRequestDto();
-        loginRequest.setUserId("admin");
-        loginRequest.setPassword("password");
-        LoginResponseDto loginResponse = new LoginResponseDto("token");
-        loginResponse.setToken("new-token");
-
-        assertThat(response.getTitle()).isEqualTo("Title");
-        assertThat(response.getStatus()).isEqualTo("TODO");
-        assertThat(response.getCreatedDate()).isEqualTo(created);
-        assertThat(response.getEmployeeId()).isEqualTo(1L);
-        assertThat(response.getEmployeeName()).isEqualTo("Abhi");
-        assertThat(response.getCategoryId()).isEqualTo(2L);
-        assertThat(response.getCategoryName()).isEqualTo("Dev");
-        assertThat(loginRequest.getUserId()).isEqualTo("admin");
-        assertThat(loginRequest.getPassword()).isEqualTo("password");
-        assertThat(loginResponse.getToken()).isEqualTo("new-token");
+        assertEquals("Task", request.getTitle());
+        assertEquals("TODO", request.getStatus());
+        assertEquals(1L, request.getEmployeeId());
+        assertEquals(2L, request.getCategoryId());
     }
 
     @Test
-    void entityGettersSettersAndPrePersistWork() {
+    void shouldSetAndGetTaskResponseFields() {
+        TaskResponseDto response = new TaskResponseDto();
+        LocalDateTime createdDate = LocalDateTime.of(2026, 5, 13, 12, 0);
+        response.setId(1L);
+        response.setTitle("Task");
+        response.setStatus("DONE");
+        response.setCreatedDate(createdDate);
+        response.setEmployeeId(2L);
+        response.setEmployeeName("Abhi");
+        response.setCategoryId(3L);
+        response.setCategoryName("Development");
+
+        assertEquals(1L, response.getId());
+        assertEquals("Task", response.getTitle());
+        assertEquals("DONE", response.getStatus());
+        assertEquals(createdDate, response.getCreatedDate());
+        assertEquals(2L, response.getEmployeeId());
+        assertEquals("Abhi", response.getEmployeeName());
+        assertEquals(3L, response.getCategoryId());
+        assertEquals("Development", response.getCategoryName());
+    }
+
+    @Test
+    void shouldSetAndGetLoginFields() {
+        LoginRequestDto request = new LoginRequestDto();
+        request.setUserId("admin");
+        request.setPassword("admin123");
+        LoginResponseDto response = new LoginResponseDto("token");
+        response.setToken("new-token");
+
+        assertEquals("admin", request.getUserId());
+        assertEquals("admin123", request.getPassword());
+        assertEquals("new-token", response.getToken());
+    }
+
+    @Test
+    void shouldSetAndGetEntityFields() {
         AppUser appUser = new AppUser();
         appUser.setUserId("user");
         appUser.setPassword("encoded");
@@ -63,6 +81,7 @@ class ModelTest {
         Employee employee = new Employee();
         employee.setId(1L);
         employee.setName("Neha");
+
         Category category = new Category();
         category.setId(2L);
         category.setName("Testing");
@@ -77,16 +96,20 @@ class ModelTest {
         employee.setTasks(List.of(task));
         category.setTasks(List.of(task));
 
-        assertThat(appUser.getUserId()).isEqualTo("user");
-        assertThat(appUser.getPassword()).isEqualTo("encoded");
-        assertThat(appUser.getRole()).isEqualTo("USER");
-        assertThat(employee.getTasks()).containsExactly(task);
-        assertThat(category.getTasks()).containsExactly(task);
-        assertThat(task.getId()).isEqualTo(3L);
-        assertThat(task.getTitle()).isEqualTo("Task");
-        assertThat(task.getStatus()).isEqualTo("TODO");
-        assertThat(task.getEmployee()).isSameAs(employee);
-        assertThat(task.getCategory()).isSameAs(category);
-        assertThat(task.getCreatedDate()).isNotNull();
+        assertEquals("user", appUser.getUserId());
+        assertEquals("encoded", appUser.getPassword());
+        assertEquals("USER", appUser.getRole());
+        assertEquals(1L, employee.getId());
+        assertEquals("Neha", employee.getName());
+        assertEquals(2L, category.getId());
+        assertEquals("Testing", category.getName());
+        assertEquals(3L, task.getId());
+        assertEquals("Task", task.getTitle());
+        assertEquals("TODO", task.getStatus());
+        assertSame(employee, task.getEmployee());
+        assertSame(category, task.getCategory());
+        assertEquals(List.of(task), employee.getTasks());
+        assertEquals(List.of(task), category.getTasks());
+        assertNotNull(task.getCreatedDate());
     }
 }
