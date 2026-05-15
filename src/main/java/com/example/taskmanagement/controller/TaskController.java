@@ -37,7 +37,7 @@ public class TaskController {
     @GetMapping("/page")
     // @PreAuthorize("hasRole('ADMIN')")
     public List<TaskResponseDto> getPaginatedTasks(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
