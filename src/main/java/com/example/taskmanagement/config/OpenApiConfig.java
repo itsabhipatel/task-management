@@ -13,7 +13,7 @@ public class OpenApiConfig {
         Info info = new Info()
                 .title("Task Management API")
                 .version("1.0")
-                .description("Simple Task CRUD API with Employee and Category");
+                .description("Task workflow API with filtering, priority, progress, due dates, employees, and categories");
 
         return new OpenAPI().info(info);
     }

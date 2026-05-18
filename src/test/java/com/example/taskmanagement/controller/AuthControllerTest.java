@@ -2,6 +2,7 @@ package com.example.taskmanagement.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
@@ -11,7 +12,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,7 +28,7 @@ class AuthControllerTest {
 
         ResponseEntity<LoginResponseDto> response = authController.login(request("admin", "admin123"));
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals("jwt-token", response.getBody().getToken());
     }
@@ -37,9 +37,7 @@ class AuthControllerTest {
     void shouldReturnUnauthorizedWhenCredentialsAreInvalid() {
         AuthController authController = new AuthController(new FailedAuthenticationManager(), new FixedJwtUtil());
 
-        ResponseEntity<LoginResponseDto> response = authController.login(request("admin", "wrong"));
-
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertThrows(BadCredentialsException.class, () -> authController.login(request("admin", "wrong")));
     }
 
     private LoginRequestDto request(String userId, String password) {

@@ -2,16 +2,21 @@ package com.example.taskmanagement.service;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskFilterDto;
+import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
 import com.example.taskmanagement.repository.CategoryRepository;
 import com.example.taskmanagement.repository.EmployeeRepository;
 import com.example.taskmanagement.repository.TaskRepository;
+import com.example.taskmanagement.specification.TaskSpecification;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -82,10 +87,41 @@ public class TaskService {
         return getPaginatedTasks(pageable);
     }
 
+    public List<TaskResponseDto> filterTasks(TaskFilterDto filter) {
+        if (filter == null) {
+            return convertToResponseDtoList(taskRepository.findAll());
+        }
+
+        return convertToResponseDtoList(taskRepository.findAll(TaskSpecification.filterTasks(
+                filter.getId(),
+                filter.getTitle(),
+                filter.getDescription(),
+                filter.getStatus(),
+                filter.getPriority(),
+                filter.getDueDate(),
+                filter.getCreatedDate(),
+                filter.getUpdatedDate(),
+                filter.getCompletedDate(),
+                filter.getProgressPercentage(),
+                filter.getEmployeeId(),
+                filter.getCategoryId()
+        )));
+    }
+
+    public TaskSummaryDto getTaskSummary() {
+        List<Task> tasks = taskRepository.findAll();
+        TaskSummaryDto summary = new TaskSummaryDto();
+        summary.setTotalTasks(tasks.size());
+        summary.setOverdueTasks(tasks.stream().filter(this::isOverdue).count());
+        summary.setAverageProgress(calculateAverageProgress(tasks));
+        summary.setStatusCounts(countByValue(tasks, true));
+        summary.setPriorityCounts(countByValue(tasks, false));
+        return summary;
+    }
+
     public TaskResponseDto createTask(TaskRequestDto taskRequestDto) {
         Task task = new Task();
-        task.setTitle(taskRequestDto.getTitle());
-        task.setStatus(taskRequestDto.getStatus());
+        applyTaskDetails(task, taskRequestDto);
         setEmployeeAndCategory(task, taskRequestDto);
 
         Task savedTask = taskRepository.save(task);
@@ -99,9 +135,29 @@ public class TaskService {
             return null;
         }
 
-        task.setTitle(taskRequestDto.getTitle());
-        task.setStatus(taskRequestDto.getStatus());
+        applyTaskDetails(task, taskRequestDto);
         setEmployeeAndCategory(task, taskRequestDto);
+
+        Task savedTask = taskRepository.save(task);
+        return convertToResponseDto(savedTask);
+    }
+
+    public TaskResponseDto updateTaskProgress(Long id, Integer progressPercentage) {
+        Task task = taskRepository.findById(id).orElse(null);
+
+        if (task == null) {
+            return null;
+        }
+
+        int normalizedProgress = normalizeProgress(progressPercentage);
+        task.setProgressPercentage(normalizedProgress);
+        if (normalizedProgress == 100) {
+            task.setStatus("DONE");
+            task.setCompletedDate(LocalDateTime.now());
+        } else if ("DONE".equals(task.getStatus())) {
+            task.setStatus("IN_PROGRESS");
+            task.setCompletedDate(null);
+        }
 
         Task savedTask = taskRepository.save(task);
         return convertToResponseDto(savedTask);
@@ -134,6 +190,25 @@ public class TaskService {
         task.setCategory(category);
     }
 
+    private void applyTaskDetails(Task task, TaskRequestDto taskRequestDto) {
+        task.setTitle(taskRequestDto.getTitle());
+        task.setDescription(taskRequestDto.getDescription());
+        task.setStatus(defaultText(taskRequestDto.getStatus(), "TODO"));
+        task.setPriority(defaultText(taskRequestDto.getPriority(), "MEDIUM"));
+        task.setDueDate(taskRequestDto.getDueDate());
+        task.setProgressPercentage(normalizeProgress(taskRequestDto.getProgressPercentage()));
+
+        if ("DONE".equals(task.getStatus()) || task.getProgressPercentage() == 100) {
+            task.setStatus("DONE");
+            task.setProgressPercentage(100);
+            if (task.getCompletedDate() == null) {
+                task.setCompletedDate(LocalDateTime.now());
+            }
+        } else {
+            task.setCompletedDate(null);
+        }
+    }
+
     private List<TaskResponseDto> convertToResponseDtoList(List<Task> tasks) {
         List<TaskResponseDto> taskResponseDtos = new ArrayList<>();
 
@@ -149,8 +224,15 @@ public class TaskService {
 
         taskResponseDto.setId(task.getId());
         taskResponseDto.setTitle(task.getTitle());
+        taskResponseDto.setDescription(task.getDescription());
         taskResponseDto.setStatus(task.getStatus());
+        taskResponseDto.setPriority(task.getPriority());
+        taskResponseDto.setDueDate(task.getDueDate());
         taskResponseDto.setCreatedDate(task.getCreatedDate());
+        taskResponseDto.setUpdatedDate(task.getUpdatedDate());
+        taskResponseDto.setCompletedDate(task.getCompletedDate());
+        taskResponseDto.setProgressPercentage(task.getProgressPercentage());
+        taskResponseDto.setOverdue(isOverdue(task));
 
         if (task.getEmployee() != null) {
             taskResponseDto.setEmployeeId(task.getEmployee().getId());
@@ -163,5 +245,52 @@ public class TaskService {
         }
 
         return taskResponseDto;
+    }
+
+    private boolean isOverdue(Task task) {
+        return task.getDueDate() != null
+                && !"DONE".equals(task.getStatus())
+                && task.getDueDate().isBefore(LocalDateTime.now());
+    }
+
+    private double calculateAverageProgress(List<Task> tasks) {
+        if (tasks.isEmpty()) {
+            return 0;
+        }
+
+        return tasks.stream()
+                .map(Task::getProgressPercentage)
+                .mapToInt(progress -> progress == null ? 0 : progress)
+                .average()
+                .orElse(0);
+    }
+
+    private Map<String, Long> countByValue(List<Task> tasks, boolean status) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        for (Task task : tasks) {
+            String value = status ? task.getStatus() : task.getPriority();
+            value = defaultText(value, "UNSET");
+            counts.put(value, counts.getOrDefault(value, 0L) + 1);
+        }
+        return counts;
+    }
+
+    private String defaultText(String value, String defaultValue) {
+        String normalized = normalizeText(value);
+        return normalized == null ? defaultValue : normalized;
+    }
+
+    private String normalizeText(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toUpperCase();
+    }
+
+    private int normalizeProgress(Integer progressPercentage) {
+        if (progressPercentage == null) {
+            return 0;
+        }
+        return Math.max(0, Math.min(100, progressPercentage));
     }
 }

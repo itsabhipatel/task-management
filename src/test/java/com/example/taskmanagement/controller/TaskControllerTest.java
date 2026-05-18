@@ -2,11 +2,14 @@ package com.example.taskmanagement.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -52,9 +55,7 @@ class TaskControllerTest {
     void shouldReturnNotFoundWhenTaskByIdIsMissing() {
         when(taskService.getTaskById(1L)).thenReturn(null);
 
-        var result = taskController.getTaskById(1L);
-
-        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        assertThrows(ResourceNotFoundException.class, () -> taskController.getTaskById(1L));
     }
 
     @Test
@@ -102,6 +103,18 @@ class TaskControllerTest {
     }
 
     @Test
+    void shouldReturnTaskSummary() {
+        TaskSummaryDto summary = new TaskSummaryDto();
+        summary.setTotalTasks(10);
+        when(taskService.getTaskSummary()).thenReturn(summary);
+
+        TaskSummaryDto result = taskController.getTaskSummary();
+
+        assertSame(summary, result);
+        assertEquals(10, result.getTotalTasks());
+    }
+
+    @Test
     void shouldCreateTask() {
         TaskRequestDto request = new TaskRequestDto();
         TaskResponseDto task = response(1L, "Task");
@@ -129,9 +142,25 @@ class TaskControllerTest {
         TaskRequestDto request = new TaskRequestDto();
         when(taskService.updateTask(1L, request)).thenReturn(null);
 
-        var result = taskController.updateTask(1L, request);
+        assertThrows(ResourceNotFoundException.class, () -> taskController.updateTask(1L, request));
+    }
 
-        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+    @Test
+    void shouldUpdateTaskProgress() {
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.updateTaskProgress(1L, 75)).thenReturn(task);
+
+        var result = taskController.updateTaskProgress(1L, 75);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertSame(task, result.getBody());
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenUpdatingProgressForMissingTask() {
+        when(taskService.updateTaskProgress(1L, 75)).thenReturn(null);
+
+        assertThrows(ResourceNotFoundException.class, () -> taskController.updateTaskProgress(1L, 75));
     }
 
     @Test
@@ -147,9 +176,7 @@ class TaskControllerTest {
     void shouldReturnNotFoundWhenDeletingMissingTask() {
         when(taskService.deleteTask(1L)).thenReturn(false);
 
-        var result = taskController.deleteTask(1L);
-
-        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        assertThrows(ResourceNotFoundException.class, () -> taskController.deleteTask(1L));
     }
 
     private TaskResponseDto response(Long id, String title) {

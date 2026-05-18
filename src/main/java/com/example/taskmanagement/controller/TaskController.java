@@ -1,16 +1,19 @@
 package com.example.taskmanagement.controller;
 
+import com.example.taskmanagement.dto.TaskFilterDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
 import java.util.List;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,7 +38,7 @@ public class TaskController {
     }
 
     @GetMapping("/page")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<TaskResponseDto> getPaginatedTasks(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "5") int size) {
@@ -51,7 +54,7 @@ public class TaskController {
     }
 
     @GetMapping("/sort")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<TaskResponseDto> getSortedTasks(
             @RequestParam(defaultValue = "id") List<String> fields) {
 
@@ -59,7 +62,7 @@ public class TaskController {
     }
 
     @GetMapping("/page-and-sort")
-    // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<TaskResponseDto> getPaginatedAndSortedTasks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
@@ -68,12 +71,22 @@ public class TaskController {
         return taskService.getPaginatedAndSortedTasks(page, size, fields);
     }
 
+    @PostMapping("/filter")
+    public List<TaskResponseDto> filterTasks(@RequestBody(required = false) TaskFilterDto filter) {
+        return taskService.filterTasks(filter);
+    }
+
+    @GetMapping("/summary")
+    public TaskSummaryDto getTaskSummary() {
+        return taskService.getTaskSummary();
+    }
+
     @GetMapping("/by-id/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
         TaskResponseDto task = taskService.getTaskById(id);
 
         if (task == null) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Task not found with id: " + id);
         }
 
         return ResponseEntity.ok(task);
@@ -84,13 +97,25 @@ public class TaskController {
         return taskService.createTask(taskRequestDto);
     }
 
-    @PutMapping("/Aupdate/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
                                                       @RequestBody TaskRequestDto taskRequestDto) {
         TaskResponseDto task = taskService.updateTask(id, taskRequestDto);
 
         if (task == null) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Task not found with id: " + id);
+        }
+
+        return ResponseEntity.ok(task);
+    }
+
+    @PatchMapping("/{id}/progress")
+    public ResponseEntity<TaskResponseDto> updateTaskProgress(@PathVariable Long id,
+                                                              @RequestParam Integer progressPercentage) {
+        TaskResponseDto task = taskService.updateTaskProgress(id, progressPercentage);
+
+        if (task == null) {
+            throw new ResourceNotFoundException("Task not found with id: " + id);
         }
 
         return ResponseEntity.ok(task);
@@ -101,7 +126,7 @@ public class TaskController {
         boolean deleted = taskService.deleteTask(id);
 
         if (!deleted) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException("Task not found with id: " + id);
         }
 
         return ResponseEntity.noContent().build();

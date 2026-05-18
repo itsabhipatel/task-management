@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
 import com.example.taskmanagement.entity.AppUser;
@@ -13,7 +14,9 @@ import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,12 +28,21 @@ class ModelTest {
     void shouldSetAndGetTaskRequestFields() {
         TaskRequestDto request = new TaskRequestDto();
         request.setTitle("Task");
+        request.setDescription("Details");
         request.setStatus("TODO");
+        request.setPriority("HIGH");
+        LocalDateTime dueDate = LocalDateTime.of(2026, 5, 20, 12, 0);
+        request.setDueDate(dueDate);
+        request.setProgressPercentage(40);
         request.setEmployeeId(1L);
         request.setCategoryId(2L);
 
         assertEquals("Task", request.getTitle());
+        assertEquals("Details", request.getDescription());
         assertEquals("TODO", request.getStatus());
+        assertEquals("HIGH", request.getPriority());
+        assertEquals(dueDate, request.getDueDate());
+        assertEquals(40, request.getProgressPercentage());
         assertEquals(1L, request.getEmployeeId());
         assertEquals(2L, request.getCategoryId());
     }
@@ -39,10 +51,20 @@ class ModelTest {
     void shouldSetAndGetTaskResponseFields() {
         TaskResponseDto response = new TaskResponseDto();
         LocalDateTime createdDate = LocalDateTime.of(2026, 5, 13, 12, 0);
+        LocalDateTime updatedDate = LocalDateTime.of(2026, 5, 14, 12, 0);
+        LocalDateTime completedDate = LocalDateTime.of(2026, 5, 15, 12, 0);
+        LocalDateTime dueDate = LocalDateTime.of(2026, 5, 16, 12, 0);
         response.setId(1L);
         response.setTitle("Task");
+        response.setDescription("Details");
         response.setStatus("DONE");
+        response.setPriority("HIGH");
+        response.setDueDate(dueDate);
         response.setCreatedDate(createdDate);
+        response.setUpdatedDate(updatedDate);
+        response.setCompletedDate(completedDate);
+        response.setProgressPercentage(100);
+        response.setOverdue(false);
         response.setEmployeeId(2L);
         response.setEmployeeName("Abhi");
         response.setCategoryId(3L);
@@ -50,8 +72,15 @@ class ModelTest {
 
         assertEquals(1L, response.getId());
         assertEquals("Task", response.getTitle());
+        assertEquals("Details", response.getDescription());
         assertEquals("DONE", response.getStatus());
+        assertEquals("HIGH", response.getPriority());
+        assertEquals(dueDate, response.getDueDate());
         assertEquals(createdDate, response.getCreatedDate());
+        assertEquals(updatedDate, response.getUpdatedDate());
+        assertEquals(completedDate, response.getCompletedDate());
+        assertEquals(100, response.getProgressPercentage());
+        assertEquals(false, response.isOverdue());
         assertEquals(2L, response.getEmployeeId());
         assertEquals("Abhi", response.getEmployeeName());
         assertEquals(3L, response.getCategoryId());
@@ -72,6 +101,27 @@ class ModelTest {
     }
 
     @Test
+    void shouldSetAndGetTaskSummaryFields() {
+        TaskSummaryDto summary = new TaskSummaryDto();
+        Map<String, Long> statusCounts = new LinkedHashMap<>();
+        statusCounts.put("TODO", 2L);
+        Map<String, Long> priorityCounts = new LinkedHashMap<>();
+        priorityCounts.put("HIGH", 1L);
+
+        summary.setTotalTasks(3);
+        summary.setOverdueTasks(1);
+        summary.setAverageProgress(55.5);
+        summary.setStatusCounts(statusCounts);
+        summary.setPriorityCounts(priorityCounts);
+
+        assertEquals(3, summary.getTotalTasks());
+        assertEquals(1, summary.getOverdueTasks());
+        assertEquals(55.5, summary.getAverageProgress());
+        assertEquals(statusCounts, summary.getStatusCounts());
+        assertEquals(priorityCounts, summary.getPriorityCounts());
+    }
+
+    @Test
     void shouldSetAndGetEntityFields() {
         AppUser appUser = new AppUser();
         appUser.setUserId("user");
@@ -89,10 +139,15 @@ class ModelTest {
         Task task = new Task();
         task.setId(3L);
         task.setTitle("Task");
+        task.setDescription("Details");
         task.setStatus("TODO");
+        task.setPriority("MEDIUM");
+        task.setDueDate(LocalDateTime.of(2026, 5, 20, 12, 0));
+        task.setProgressPercentage(30);
         task.setEmployee(employee);
         task.setCategory(category);
         task.setCreatedDateBeforeSave();
+        task.setCompletedDate(LocalDateTime.of(2026, 5, 21, 12, 0));
         employee.setTasks(List.of(task));
         category.setTasks(List.of(task));
 
@@ -105,11 +160,16 @@ class ModelTest {
         assertEquals("Testing", category.getName());
         assertEquals(3L, task.getId());
         assertEquals("Task", task.getTitle());
+        assertEquals("Details", task.getDescription());
         assertEquals("TODO", task.getStatus());
+        assertEquals("MEDIUM", task.getPriority());
+        assertEquals(30, task.getProgressPercentage());
         assertSame(employee, task.getEmployee());
         assertSame(category, task.getCategory());
         assertEquals(List.of(task), employee.getTasks());
         assertEquals(List.of(task), category.getTasks());
         assertNotNull(task.getCreatedDate());
+        assertNotNull(task.getUpdatedDate());
+        assertNotNull(task.getCompletedDate());
     }
 }

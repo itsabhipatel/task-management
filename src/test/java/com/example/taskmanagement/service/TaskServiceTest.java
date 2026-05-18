@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
@@ -123,6 +124,10 @@ class TaskServiceTest {
     @Test
     void shouldCreateTask() {
         TaskRequestDto request = request("New task", "TODO", 1L, 2L);
+        request.setDescription("Details");
+        request.setPriority("high");
+        request.setDueDate(LocalDateTime.of(2026, 5, 20, 10, 0));
+        request.setProgressPercentage(25);
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee(1L, "Neha")));
         when(categoryRepository.findById(2L)).thenReturn(Optional.of(category(2L, "Testing")));
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> {
@@ -138,6 +143,9 @@ class TaskServiceTest {
         assertEquals("New task", result.getTitle());
         assertEquals(1L, result.getEmployeeId());
         assertEquals(2L, result.getCategoryId());
+        assertEquals("Details", result.getDescription());
+        assertEquals("HIGH", result.getPriority());
+        assertEquals(25, result.getProgressPercentage());
     }
 
     @Test
@@ -163,6 +171,8 @@ class TaskServiceTest {
         assertNotNull(result);
         assertEquals("Updated", result.getTitle());
         assertEquals("DONE", result.getStatus());
+        assertEquals(100, result.getProgressPercentage());
+        assertNotNull(result.getCompletedDate());
     }
 
     @Test
@@ -170,6 +180,50 @@ class TaskServiceTest {
         when(taskRepository.findById(5L)).thenReturn(Optional.empty());
 
         TaskResponseDto result = taskService.updateTask(5L, request("Updated", "DONE", null, null));
+
+        assertNull(result);
+    }
+
+    @Test
+    void shouldReturnTaskSummary() {
+        Task overdue = task(1L, "Late", "TODO", null, null);
+        overdue.setPriority("HIGH");
+        overdue.setDueDate(LocalDateTime.of(2020, 1, 1, 10, 0));
+        overdue.setProgressPercentage(20);
+        Task done = task(2L, "Done", "DONE", null, null);
+        done.setPriority("LOW");
+        done.setDueDate(LocalDateTime.of(2020, 1, 1, 10, 0));
+        done.setProgressPercentage(100);
+        when(taskRepository.findAll()).thenReturn(List.of(overdue, done));
+
+        TaskSummaryDto result = taskService.getTaskSummary();
+
+        assertEquals(2, result.getTotalTasks());
+        assertEquals(1, result.getOverdueTasks());
+        assertEquals(60, result.getAverageProgress());
+        assertEquals(1, result.getStatusCounts().get("TODO"));
+        assertEquals(1, result.getPriorityCounts().get("HIGH"));
+    }
+
+    @Test
+    void shouldUpdateProgressAndCompleteTaskAtOneHundredPercent() {
+        Task existingTask = task(5L, "Task", "IN_PROGRESS", null, null);
+        when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(existingTask)).thenReturn(existingTask);
+
+        TaskResponseDto result = taskService.updateTaskProgress(5L, 100);
+
+        assertNotNull(result);
+        assertEquals("DONE", result.getStatus());
+        assertEquals(100, result.getProgressPercentage());
+        assertNotNull(result.getCompletedDate());
+    }
+
+    @Test
+    void shouldReturnNullWhenUpdatingProgressForMissingTask() {
+        when(taskRepository.findById(5L)).thenReturn(Optional.empty());
+
+        TaskResponseDto result = taskService.updateTaskProgress(5L, 50);
 
         assertNull(result);
     }
@@ -207,7 +261,13 @@ class TaskServiceTest {
         Task task = new Task();
         task.setId(id);
         task.setTitle(title);
+        task.setDescription("Description");
         task.setStatus(status);
+        task.setPriority("MEDIUM");
+        task.setProgressPercentage("DONE".equals(status) ? 100 : 0);
+        if ("DONE".equals(status)) {
+            task.setCompletedDate(LocalDateTime.of(2026, 5, 13, 11, 0));
+        }
         task.setCreatedDate(LocalDateTime.of(2026, 5, 13, 10, 0));
         task.setEmployee(employee);
         task.setCategory(category);
@@ -227,4 +287,5 @@ class TaskServiceTest {
         category.setName(name);
         return category;
     }
+
 }

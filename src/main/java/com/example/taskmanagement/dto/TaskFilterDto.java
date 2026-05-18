@@ -2,7 +2,7 @@ package com.example.taskmanagement.dto;
 
 import java.time.LocalDateTime;
 
-public class TaskResponseDto {
+public class TaskFilterDto {
 
     private Long id;
     private String title;
@@ -14,11 +14,8 @@ public class TaskResponseDto {
     private LocalDateTime updatedDate;
     private LocalDateTime completedDate;
     private Integer progressPercentage;
-    private boolean overdue;
     private Long employeeId;
-    private String employeeName;
     private Long categoryId;
-    private String categoryName;
 
     public Long getId() {
         return id;
@@ -100,14 +97,6 @@ public class TaskResponseDto {
         this.progressPercentage = progressPercentage;
     }
 
-    public boolean isOverdue() {
-        return overdue;
-    }
-
-    public void setOverdue(boolean overdue) {
-        this.overdue = overdue;
-    }
-
     public Long getEmployeeId() {
         return employeeId;
     }
@@ -116,27 +105,11 @@ public class TaskResponseDto {
         this.employeeId = employeeId;
     }
 
-    public String getEmployeeName() {
-        return employeeName;
-    }
-
-    public void setEmployeeName(String employeeName) {
-        this.employeeName = employeeName;
-    }
-
     public Long getCategoryId() {
         return categoryId;
     }
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
     }
 }

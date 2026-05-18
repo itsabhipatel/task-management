@@ -5,7 +5,6 @@ import com.example.taskmanagement.dto.auth.LoginResponseDto;
 import com.example.taskmanagement.security.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,19 +27,15 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginRequestDto loginRequestDto) {
-        try {
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequestDto.getUserId(),
-                            loginRequestDto.getPassword());
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(
+                        loginRequestDto.getUserId(),
+                        loginRequestDto.getPassword());
 
-            Authentication authentication = authenticationManager.authenticate(authenticationToken);
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String token = jwtUtil.generateToken(userDetails);
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String token = jwtUtil.generateToken(userDetails);
 
-            return ResponseEntity.ok(new LoginResponseDto(token));
-        } catch (BadCredentialsException exception) {
-            return ResponseEntity.status(401).build();
-        }
+        return ResponseEntity.ok(new LoginResponseDto(token));
     }
 }
