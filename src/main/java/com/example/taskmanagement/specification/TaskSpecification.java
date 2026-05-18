@@ -1,5 +1,6 @@
 package com.example.taskmanagement.specification;
 
+import com.example.taskmanagement.constant.TaskFieldConstants;
 import com.example.taskmanagement.entity.Task;
 import jakarta.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
@@ -37,7 +38,7 @@ public class TaskSpecification {
             if (id != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("id"),
+                                root.get(TaskFieldConstants.ID),
                                 id
                         )
                 );
@@ -47,7 +48,7 @@ public class TaskSpecification {
             if (title != null && !title.isEmpty()) {
                 predicates.add(
                         criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("title")),
+                                criteriaBuilder.lower(root.get(TaskFieldConstants.TITLE)),
                                 "%" + title.toLowerCase(Locale.ROOT) + "%"
                         )
                 );
@@ -57,7 +58,7 @@ public class TaskSpecification {
             if (description != null && !description.isEmpty()) {
                 predicates.add(
                         criteriaBuilder.like(
-                                criteriaBuilder.lower(root.get("description")),
+                                criteriaBuilder.lower(root.get(TaskFieldConstants.DESCRIPTION)),
                                 "%" + description.toLowerCase(Locale.ROOT) + "%"
                         )
                 );
@@ -67,7 +68,7 @@ public class TaskSpecification {
             if (status != null && !status.isEmpty()) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("status"),
+                                root.get(TaskFieldConstants.STATUS),
                                 status.toUpperCase(Locale.ROOT)
                         )
                 );
@@ -77,7 +78,7 @@ public class TaskSpecification {
             if (priority != null && !priority.isEmpty()) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("priority"),
+                                root.get(TaskFieldConstants.PRIORITY),
                                 priority.toUpperCase(Locale.ROOT)
                         )
                 );
@@ -87,7 +88,7 @@ public class TaskSpecification {
             if (dueDate != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("dueDate"),
+                                root.get(TaskFieldConstants.DUE_DATE),
                                 dueDate
                         )
                 );
@@ -97,7 +98,7 @@ public class TaskSpecification {
             if (createdDate != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("createdDate"),
+                                root.get(TaskFieldConstants.CREATED_DATE),
                                 createdDate
                         )
                 );
@@ -107,7 +108,7 @@ public class TaskSpecification {
             if (updatedDate != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("updatedDate"),
+                                root.get(TaskFieldConstants.UPDATED_DATE),
                                 updatedDate
                         )
                 );
@@ -117,7 +118,7 @@ public class TaskSpecification {
             if (completedDate != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("completedDate"),
+                                root.get(TaskFieldConstants.COMPLETED_DATE),
                                 completedDate
                         )
                 );
@@ -127,7 +128,7 @@ public class TaskSpecification {
             if (progressPercentage != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("progressPercentage"),
+                                root.get(TaskFieldConstants.PROGRESS_PERCENTAGE),
                                 progressPercentage
                         )
                 );
@@ -137,7 +138,7 @@ public class TaskSpecification {
             if (employeeId != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("employee").get("id"),
+                                root.get(TaskFieldConstants.EMPLOYEE).get(TaskFieldConstants.ID),
                                 employeeId
                         )
                 );
@@ -147,7 +148,7 @@ public class TaskSpecification {
             if (categoryId != null) {
                 predicates.add(
                         criteriaBuilder.equal(
-                                root.get("category").get("id"),
+                                root.get(TaskFieldConstants.CATEGORY).get(TaskFieldConstants.ID),
                                 categoryId
                         )
                 );

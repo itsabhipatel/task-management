@@ -1,5 +1,6 @@
 package com.example.taskmanagement.service;
 
+import com.example.taskmanagement.constant.TaskConstants;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskFilterDto;
@@ -152,10 +153,10 @@ public class TaskService {
         int normalizedProgress = normalizeProgress(progressPercentage);
         task.setProgressPercentage(normalizedProgress);
         if (normalizedProgress == 100) {
-            task.setStatus("DONE");
+            task.setStatus(TaskConstants.STATUS_DONE);
             task.setCompletedDate(LocalDateTime.now());
-        } else if ("DONE".equals(task.getStatus())) {
-            task.setStatus("IN_PROGRESS");
+        } else if (TaskConstants.STATUS_DONE.equals(task.getStatus())) {
+            task.setStatus(TaskConstants.STATUS_IN_PROGRESS);
             task.setCompletedDate(null);
         }
 
@@ -193,14 +194,15 @@ public class TaskService {
     private void applyTaskDetails(Task task, TaskRequestDto taskRequestDto) {
         task.setTitle(taskRequestDto.getTitle());
         task.setDescription(taskRequestDto.getDescription());
-        task.setStatus(defaultText(taskRequestDto.getStatus(), "TODO"));
-        task.setPriority(defaultText(taskRequestDto.getPriority(), "MEDIUM"));
+        task.setStatus(defaultText(taskRequestDto.getStatus(), TaskConstants.STATUS_TODO));
+        task.setPriority(defaultText(taskRequestDto.getPriority(), TaskConstants.PRIORITY_MEDIUM));
         task.setDueDate(taskRequestDto.getDueDate());
         task.setProgressPercentage(normalizeProgress(taskRequestDto.getProgressPercentage()));
 
-        if ("DONE".equals(task.getStatus()) || task.getProgressPercentage() == 100) {
-            task.setStatus("DONE");
-            task.setProgressPercentage(100);
+        if (TaskConstants.STATUS_DONE.equals(task.getStatus())
+                || task.getProgressPercentage() == TaskConstants.MAX_PROGRESS) {
+            task.setStatus(TaskConstants.STATUS_DONE);
+            task.setProgressPercentage(TaskConstants.MAX_PROGRESS);
             if (task.getCompletedDate() == null) {
                 task.setCompletedDate(LocalDateTime.now());
             }
@@ -249,7 +251,7 @@ public class TaskService {
 
     private boolean isOverdue(Task task) {
         return task.getDueDate() != null
-                && !"DONE".equals(task.getStatus())
+                && !TaskConstants.STATUS_DONE.equals(task.getStatus())
                 && task.getDueDate().isBefore(LocalDateTime.now());
     }
 
@@ -269,7 +271,7 @@ public class TaskService {
         Map<String, Long> counts = new LinkedHashMap<>();
         for (Task task : tasks) {
             String value = status ? task.getStatus() : task.getPriority();
-            value = defaultText(value, "UNSET");
+            value = defaultText(value, TaskConstants.UNSET);
             counts.put(value, counts.getOrDefault(value, 0L) + 1);
         }
         return counts;
@@ -289,8 +291,8 @@ public class TaskService {
 
     private int normalizeProgress(Integer progressPercentage) {
         if (progressPercentage == null) {
-            return 0;
+            return TaskConstants.MIN_PROGRESS;
         }
-        return Math.max(0, Math.min(100, progressPercentage));
+        return Math.max(TaskConstants.MIN_PROGRESS, Math.min(TaskConstants.MAX_PROGRESS, progressPercentage));
     }
 }
