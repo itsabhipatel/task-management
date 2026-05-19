@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,18 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final EmployeeRepository employeeRepository;
     private final CategoryRepository categoryRepository;
+
+    @Value("${task.default-status:" + TaskConstants.STATUS_TODO + "}")
+    private String defaultStatus = TaskConstants.STATUS_TODO;
+
+    @Value("${task.default-priority:" + TaskConstants.PRIORITY_MEDIUM + "}")
+    private String defaultPriority = TaskConstants.PRIORITY_MEDIUM;
+
+    @Value("${task.default-progress:" + TaskConstants.MIN_PROGRESS + "}")
+    private int defaultProgress = TaskConstants.MIN_PROGRESS;
+
+    @Value("${task.max-progress:" + TaskConstants.MAX_PROGRESS + "}")
+    private int maxProgress = TaskConstants.MAX_PROGRESS;
 
     public TaskService(TaskRepository taskRepository,
                        EmployeeRepository employeeRepository,
@@ -152,7 +165,7 @@ public class TaskService {
 
         int normalizedProgress = normalizeProgress(progressPercentage);
         task.setProgressPercentage(normalizedProgress);
-        if (normalizedProgress == 100) {
+        if (normalizedProgress == maxProgress) {
             task.setStatus(TaskConstants.STATUS_DONE);
             task.setCompletedDate(LocalDateTime.now());
         } else if (TaskConstants.STATUS_DONE.equals(task.getStatus())) {
@@ -194,15 +207,15 @@ public class TaskService {
     private void applyTaskDetails(Task task, TaskRequestDto taskRequestDto) {
         task.setTitle(taskRequestDto.getTitle());
         task.setDescription(taskRequestDto.getDescription());
-        task.setStatus(defaultText(taskRequestDto.getStatus(), TaskConstants.STATUS_TODO));
-        task.setPriority(defaultText(taskRequestDto.getPriority(), TaskConstants.PRIORITY_MEDIUM));
+        task.setStatus(defaultText(taskRequestDto.getStatus(), defaultStatus));
+        task.setPriority(defaultText(taskRequestDto.getPriority(), defaultPriority));
         task.setDueDate(taskRequestDto.getDueDate());
         task.setProgressPercentage(normalizeProgress(taskRequestDto.getProgressPercentage()));
 
         if (TaskConstants.STATUS_DONE.equals(task.getStatus())
-                || task.getProgressPercentage() == TaskConstants.MAX_PROGRESS) {
+                || task.getProgressPercentage() == maxProgress) {
             task.setStatus(TaskConstants.STATUS_DONE);
-            task.setProgressPercentage(TaskConstants.MAX_PROGRESS);
+            task.setProgressPercentage(maxProgress);
             if (task.getCompletedDate() == null) {
                 task.setCompletedDate(LocalDateTime.now());
             }
@@ -291,8 +304,8 @@ public class TaskService {
 
     private int normalizeProgress(Integer progressPercentage) {
         if (progressPercentage == null) {
-            return TaskConstants.MIN_PROGRESS;
+            return defaultProgress;
         }
-        return Math.max(TaskConstants.MIN_PROGRESS, Math.min(TaskConstants.MAX_PROGRESS, progressPercentage));
+        return Math.max(TaskConstants.MIN_PROGRESS, Math.min(maxProgress, progressPercentage));
     }
 }
