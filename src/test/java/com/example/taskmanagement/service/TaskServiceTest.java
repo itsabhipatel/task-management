@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.taskmanagement.dto.BulkStatusUpdateDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
@@ -206,6 +208,43 @@ class TaskServiceTest {
     }
 
     @Test
+    void shouldReturnOverdueTasks() {
+        Task overdue = task(1L, "Late", "TODO", null, null);
+        when(taskRepository.findByDueDateBeforeAndStatusNot(any(LocalDateTime.class), any()))
+                .thenReturn(List.of(overdue));
+
+        List<TaskResponseDto> result = taskService.getOverdueTasks();
+
+        assertEquals(1, result.size());
+        assertEquals("Late", result.get(0).getTitle());
+        assertTrue(result.get(0).isOverdue());
+    }
+
+    @Test
+    void shouldBulkUpdateTaskStatus() {
+        BulkStatusUpdateDto request = bulkStatusRequest(List.of(1L, 2L), "DONE");
+        Task firstTask = task(1L, "First", "TODO", null, null);
+        Task secondTask = task(2L, "Second", "IN_PROGRESS", null, null);
+        when(taskRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(firstTask, secondTask));
+        when(taskRepository.saveAll(List.of(firstTask, secondTask))).thenReturn(List.of(firstTask, secondTask));
+
+        List<TaskResponseDto> result = taskService.bulkUpdateTaskStatus(request);
+
+        assertEquals(2, result.size());
+        assertEquals("DONE", result.get(0).getStatus());
+        assertEquals(100, result.get(0).getProgressPercentage());
+        assertNotNull(result.get(0).getCompletedDate());
+        assertEquals("DONE", result.get(1).getStatus());
+    }
+
+    @Test
+    void shouldRejectBulkStatusUpdateWithoutTaskIds() {
+        BulkStatusUpdateDto request = bulkStatusRequest(List.of(), "DONE");
+
+        assertThrows(IllegalArgumentException.class, () -> taskService.bulkUpdateTaskStatus(request));
+    }
+
+    @Test
     void shouldUpdateProgressAndCompleteTaskAtOneHundredPercent() {
         Task existingTask = task(5L, "Task", "IN_PROGRESS", null, null);
         when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
@@ -257,6 +296,13 @@ class TaskServiceTest {
         return request;
     }
 
+    private BulkStatusUpdateDto bulkStatusRequest(List<Long> taskIds, String status) {
+        BulkStatusUpdateDto request = new BulkStatusUpdateDto();
+        request.setTaskIds(taskIds);
+        request.setStatus(status);
+        return request;
+    }
+
     private Task task(Long id, String title, String status, Employee employee, Category category) {
         Task task = new Task();
         task.setId(id);
@@ -265,6 +311,7 @@ class TaskServiceTest {
         task.setStatus(status);
         task.setPriority("MEDIUM");
         task.setProgressPercentage("DONE".equals(status) ? 100 : 0);
+        task.setDueDate(LocalDateTime.of(2020, 1, 1, 10, 0));
         if ("DONE".equals(status)) {
             task.setCompletedDate(LocalDateTime.of(2026, 5, 13, 11, 0));
         }

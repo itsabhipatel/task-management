@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.example.taskmanagement.dto.BulkStatusUpdateDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
@@ -115,6 +116,17 @@ class TaskControllerTest {
     }
 
     @Test
+    void shouldReturnOverdueTasks() {
+        TaskResponseDto task = response(1L, "Late task");
+        when(taskService.getOverdueTasks()).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.getOverdueTasks();
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
     void shouldCreateTask() {
         TaskRequestDto request = new TaskRequestDto();
         TaskResponseDto task = response(1L, "Task");
@@ -154,6 +166,18 @@ class TaskControllerTest {
 
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertSame(task, result.getBody());
+    }
+
+    @Test
+    void shouldBulkUpdateTaskStatus() {
+        BulkStatusUpdateDto request = new BulkStatusUpdateDto();
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.bulkUpdateTaskStatus(request)).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.bulkUpdateTaskStatus(request);
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
     }
 
     @Test

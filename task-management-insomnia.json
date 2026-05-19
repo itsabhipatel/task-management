@@ -205,6 +205,25 @@
       "metaSortKey": 230
     },
     {
+      "_id": "req_tasks_overdue",
+      "_type": "request",
+      "parentId": "fld_tasks",
+      "name": "Get Overdue Tasks",
+      "description": "Returns tasks whose due date is in the past and status is not DONE.",
+      "url": "{{ _.base_url }}/api/tasks/overdue",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 235
+    },
+    {
       "_id": "req_tasks_filter",
       "_type": "request",
       "parentId": "fld_tasks",
@@ -306,6 +325,32 @@
       ],
       "authentication": {},
       "metaSortKey": 270
+    },
+    {
+      "_id": "req_tasks_bulk_status",
+      "_type": "request",
+      "parentId": "fld_tasks",
+      "name": "Bulk Update Task Status",
+      "description": "Updates status for multiple task IDs.",
+      "url": "{{ _.base_url }}/api/tasks/bulk/status",
+      "method": "PATCH",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"taskIds\": [1, 2, 3],\n  \"status\": \"DONE\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 275
     },
     {
       "_id": "req_tasks_delete",

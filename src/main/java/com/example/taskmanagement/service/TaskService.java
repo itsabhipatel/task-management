@@ -1,6 +1,7 @@
 package com.example.taskmanagement.service;
 
 import com.example.taskmanagement.constant.TaskConstants;
+import com.example.taskmanagement.dto.BulkStatusUpdateDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskFilterDto;
@@ -133,6 +134,30 @@ public class TaskService {
         return summary;
     }
 
+    public List<TaskResponseDto> getOverdueTasks() {
+        List<Task> tasks = taskRepository.findByDueDateBeforeAndStatusNot(
+                LocalDateTime.now(),
+                TaskConstants.STATUS_DONE);
+        return convertToResponseDtoList(tasks);
+    }
+
+    public List<TaskResponseDto> bulkUpdateTaskStatus(BulkStatusUpdateDto bulkStatusUpdateDto) {
+        if (bulkStatusUpdateDto == null
+                || bulkStatusUpdateDto.getTaskIds() == null
+                || bulkStatusUpdateDto.getTaskIds().isEmpty()) {
+            throw new IllegalArgumentException("Task ids are required for bulk status update.");
+        }
+
+        String status = defaultText(bulkStatusUpdateDto.getStatus(), defaultStatus);
+        List<Task> tasks = taskRepository.findAllById(bulkStatusUpdateDto.getTaskIds());
+
+        for (Task task : tasks) {
+            applyStatus(task, status);
+        }
+
+        return convertToResponseDtoList(taskRepository.saveAll(tasks));
+    }
+
     public TaskResponseDto createTask(TaskRequestDto taskRequestDto) {
         Task task = new Task();
         applyTaskDetails(task, taskRequestDto);
@@ -166,11 +191,9 @@ public class TaskService {
         int normalizedProgress = normalizeProgress(progressPercentage);
         task.setProgressPercentage(normalizedProgress);
         if (normalizedProgress == maxProgress) {
-            task.setStatus(TaskConstants.STATUS_DONE);
-            task.setCompletedDate(LocalDateTime.now());
+            applyStatus(task, TaskConstants.STATUS_DONE);
         } else if (TaskConstants.STATUS_DONE.equals(task.getStatus())) {
-            task.setStatus(TaskConstants.STATUS_IN_PROGRESS);
-            task.setCompletedDate(null);
+            applyStatus(task, TaskConstants.STATUS_IN_PROGRESS);
         }
 
         Task savedTask = taskRepository.save(task);
@@ -207,21 +230,30 @@ public class TaskService {
     private void applyTaskDetails(Task task, TaskRequestDto taskRequestDto) {
         task.setTitle(taskRequestDto.getTitle());
         task.setDescription(taskRequestDto.getDescription());
-        task.setStatus(defaultText(taskRequestDto.getStatus(), defaultStatus));
+        applyStatus(task, defaultText(taskRequestDto.getStatus(), defaultStatus));
         task.setPriority(defaultText(taskRequestDto.getPriority(), defaultPriority));
         task.setDueDate(taskRequestDto.getDueDate());
         task.setProgressPercentage(normalizeProgress(taskRequestDto.getProgressPercentage()));
 
         if (TaskConstants.STATUS_DONE.equals(task.getStatus())
                 || task.getProgressPercentage() == maxProgress) {
-            task.setStatus(TaskConstants.STATUS_DONE);
+            applyStatus(task, TaskConstants.STATUS_DONE);
             task.setProgressPercentage(maxProgress);
+        }
+    }
+
+    private void applyStatus(Task task, String status) {
+        task.setStatus(status);
+
+        if (TaskConstants.STATUS_DONE.equals(status)) {
             if (task.getCompletedDate() == null) {
                 task.setCompletedDate(LocalDateTime.now());
             }
-        } else {
-            task.setCompletedDate(null);
+            task.setProgressPercentage(maxProgress);
+            return;
         }
+
+        task.setCompletedDate(null);
     }
 
     private List<TaskResponseDto> convertToResponseDtoList(List<Task> tasks) {

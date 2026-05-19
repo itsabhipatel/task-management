@@ -1,5 +1,6 @@
 package com.example.taskmanagement.controller;
 
+import com.example.taskmanagement.dto.BulkStatusUpdateDto;
 import com.example.taskmanagement.dto.TaskFilterDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
@@ -81,6 +82,11 @@ public class TaskController {
         return taskService.getTaskSummary();
     }
 
+    @GetMapping("/overdue")
+    public List<TaskResponseDto> getOverdueTasks() {
+        return taskService.getOverdueTasks();
+    }
+
     @GetMapping("/by-id/{id}")
     public ResponseEntity<TaskResponseDto> getTaskById(@PathVariable Long id) {
         TaskResponseDto task = taskService.getTaskById(id);
@@ -119,6 +125,11 @@ public class TaskController {
         }
 
         return ResponseEntity.ok(task);
+    }
+
+    @PatchMapping("/bulk/status")
+    public List<TaskResponseDto> bulkUpdateTaskStatus(@RequestBody BulkStatusUpdateDto bulkStatusUpdateDto) {
+        return taskService.bulkUpdateTaskStatus(bulkStatusUpdateDto);
     }
 
     @DeleteMapping("/delete/{id}")
