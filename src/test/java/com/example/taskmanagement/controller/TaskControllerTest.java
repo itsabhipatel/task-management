@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.BulkStatusUpdateDto;
+import com.example.taskmanagement.dto.TaskFilterDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
@@ -98,6 +99,19 @@ class TaskControllerTest {
         when(taskService.getPaginatedAndSortedTasks(0, 5, List.of("id"))).thenReturn(List.of(task));
 
         List<TaskResponseDto> result = taskController.getPaginatedAndSortedTasks(0, 5, List.of("id"));
+
+        assertEquals(1, result.size());
+        assertSame(task, result.get(0));
+    }
+
+    @Test
+    void shouldFilterTasks() {
+        TaskFilterDto filter = new TaskFilterDto();
+        filter.setStatus("TODO");
+        TaskResponseDto task = response(1L, "Task");
+        when(taskService.filterTasks(filter)).thenReturn(List.of(task));
+
+        List<TaskResponseDto> result = taskController.filterTasks(filter);
 
         assertEquals(1, result.size());
         assertSame(task, result.get(0));

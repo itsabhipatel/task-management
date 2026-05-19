@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.BulkStatusUpdateDto;
+import com.example.taskmanagement.dto.TaskFilterDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,6 +34,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
@@ -121,6 +124,29 @@ class TaskServiceTest {
 
         assertEquals(1, result.size());
         assertEquals("DONE", result.get(0).getStatus());
+    }
+
+    @Test
+    void shouldFilterAllTasksWhenFilterIsNull() {
+        when(taskRepository.findAll()).thenReturn(List.of(task(1L, "Task", "TODO", null, null)));
+
+        List<TaskResponseDto> result = taskService.filterTasks(null);
+
+        assertEquals(1, result.size());
+        assertEquals("Task", result.get(0).getTitle());
+    }
+
+    @Test
+    void shouldFilterTasksWithSpecification() {
+        TaskFilterDto filter = new TaskFilterDto();
+        filter.setStatus("todo");
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
+                .thenReturn(List.of(task(1L, "Filtered", "TODO", null, null)));
+
+        List<TaskResponseDto> result = taskService.filterTasks(filter);
+
+        assertEquals(1, result.size());
+        assertEquals("Filtered", result.get(0).getTitle());
     }
 
     @Test
@@ -256,6 +282,30 @@ class TaskServiceTest {
         assertEquals("DONE", result.getStatus());
         assertEquals(100, result.getProgressPercentage());
         assertNotNull(result.getCompletedDate());
+    }
+
+    @Test
+    void shouldMoveDoneTaskBackToInProgressWhenProgressDrops() {
+        Task existingTask = task(5L, "Task", "DONE", null, null);
+        when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
+        when(taskRepository.save(existingTask)).thenReturn(existingTask);
+
+        TaskResponseDto result = taskService.updateTaskProgress(5L, 75);
+
+        assertNotNull(result);
+        assertEquals("IN_PROGRESS", result.getStatus());
+        assertEquals(75, result.getProgressPercentage());
+        assertNull(result.getCompletedDate());
+    }
+
+    @Test
+    void shouldReturnZeroAverageProgressWhenNoTasksExist() {
+        when(taskRepository.findAll()).thenReturn(List.of());
+
+        TaskSummaryDto result = taskService.getTaskSummary();
+
+        assertEquals(0, result.getTotalTasks());
+        assertEquals(0, result.getAverageProgress());
     }
 
     @Test
