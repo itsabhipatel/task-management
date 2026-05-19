@@ -8,6 +8,8 @@ import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
 import java.util.List;
+
+import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -99,13 +101,13 @@ public class TaskController {
     }
 
     @PostMapping("/create")
-    public TaskResponseDto createTask(@RequestBody TaskRequestDto taskRequestDto) {
+    public TaskResponseDto createTask( @Valid @RequestBody TaskRequestDto taskRequestDto) {
         return taskService.createTask(taskRequestDto);
     }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id,
-                                                      @RequestBody TaskRequestDto taskRequestDto) {
+                                                      @Valid @RequestBody TaskRequestDto taskRequestDto) {
         TaskResponseDto task = taskService.updateTask(id, taskRequestDto);
 
         if (task == null) {
@@ -128,7 +130,7 @@ public class TaskController {
     }
 
     @PatchMapping("/bulk/status")
-    public List<TaskResponseDto> bulkUpdateTaskStatus(@RequestBody BulkStatusUpdateDto bulkStatusUpdateDto) {
+    public List<TaskResponseDto> bulkUpdateTaskStatus(@Valid @RequestBody BulkStatusUpdateDto bulkStatusUpdateDto) {
         return taskService.bulkUpdateTaskStatus(bulkStatusUpdateDto);
     }
 
