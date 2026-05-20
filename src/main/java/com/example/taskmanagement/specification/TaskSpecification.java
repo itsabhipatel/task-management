@@ -42,47 +42,167 @@ public class TaskSpecification {
                 switch (operator) {
 
                     case EQUAL:
-                        predicate =
-                                criteriaBuilder.equal(
-                                        path,
-                                        value);
+
+                        if (path.getJavaType()
+                                .equals(String.class)) {
+
+                            predicate =
+                                    criteriaBuilder.like(
+                                            criteriaBuilder.lower(
+                                                    path.as(
+                                                            String.class)),
+                                            "%" +
+                                                    value.toString()
+                                                            .toLowerCase()
+                                                    + "%");
+
+                        } else if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder.equal(
+                                            path.as(
+                                                    LocalDateTime.class),
+                                            (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder.equal(
+                                            path,
+                                            value);
+                        }
+
                         break;
 
                     case NOT_EQUAL:
-                        predicate =
-                                criteriaBuilder.notEqual(
-                                        path,
-                                        value);
+
+                        if (path.getJavaType()
+                                .equals(String.class)) {
+
+                            predicate =
+                                    criteriaBuilder.notLike(
+                                            criteriaBuilder.lower(
+                                                    path.as(
+                                                            String.class)),
+                                            "%" +
+                                                    value.toString()
+                                                            .toLowerCase()
+                                                    + "%");
+
+                        } else if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder.notEqual(
+                                            path.as(
+                                                    LocalDateTime.class),
+                                            (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder.notEqual(
+                                            path,
+                                            value);
+                        }
+
                         break;
 
                     case GREATER_THAN:
-                        predicate =
-                                criteriaBuilder.greaterThan(
-                                        (Path) path,
-                                        (Comparable) value);
+
+                        if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder.greaterThan(
+                                            path.as(
+                                                    LocalDateTime.class),
+                                            (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder.greaterThan(
+                                            path.as(
+                                                    (Class<? extends Comparable>)
+                                                            path.getJavaType()),
+                                            (Comparable) value);
+                        }
+
                         break;
 
                     case LESS_THAN:
-                        predicate =
-                                criteriaBuilder.lessThan(
-                                        (Path) path,
-                                        (Comparable) value);
+
+                        if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder.lessThan(
+                                            path.as(
+                                                    LocalDateTime.class),
+                                            (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder.lessThan(
+                                            path.as(
+                                                    (Class<? extends Comparable>)
+                                                            path.getJavaType()),
+                                            (Comparable) value);
+                        }
+
                         break;
 
                     case GREATER_THAN_EQUAL:
-                        predicate =
-                                criteriaBuilder
-                                        .greaterThanOrEqualTo(
-                                                (Path) path,
-                                                (Comparable) value);
+
+                        if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder
+                                            .greaterThanOrEqualTo(
+                                                    path.as(
+                                                            LocalDateTime.class),
+                                                    (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder
+                                            .greaterThanOrEqualTo(
+                                                    path.as(
+                                                            (Class<? extends Comparable>)
+                                                                    path.getJavaType()),
+                                                    (Comparable) value);
+                        }
+
                         break;
 
                     case LESS_THAN_EQUAL:
-                        predicate =
-                                criteriaBuilder
-                                        .lessThanOrEqualTo(
-                                                (Path) path,
-                                                (Comparable) value);
+
+                        if (path.getJavaType()
+                                .equals(LocalDateTime.class)) {
+
+                            predicate =
+                                    criteriaBuilder
+                                            .lessThanOrEqualTo(
+                                                    path.as(
+                                                            LocalDateTime.class),
+                                                    (LocalDateTime) value);
+
+                        } else {
+
+                            predicate =
+                                    criteriaBuilder
+                                            .lessThanOrEqualTo(
+                                                    path.as(
+                                                            (Class<? extends Comparable>)
+                                                                    path.getJavaType()),
+                                                    (Comparable) value);
+                        }
+
                         break;
 
                     default:
