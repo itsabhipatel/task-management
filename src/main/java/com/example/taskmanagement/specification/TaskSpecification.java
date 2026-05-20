@@ -37,46 +37,58 @@ public class TaskSpecification {
                         FilterOperator.from(
                                 filter.getOperator());
 
-                Predicate predicate =
-                        switch (operator) {
+                Predicate predicate;
 
-                            case EQUAL ->
-                                    criteriaBuilder.equal(
-                                            path,
-                                            value);
+                switch (operator) {
 
-                            case NOT_EQUAL ->
-                                    criteriaBuilder.notEqual(
-                                            path,
-                                            value);
+                    case EQUAL:
+                        predicate =
+                                criteriaBuilder.equal(
+                                        path,
+                                        value);
+                        break;
 
-                            case GREATER_THAN ->
-                                    criteriaBuilder.greaterThan(
-                                            path.as(
-                                                    Comparable.class),
-                                            (Comparable) value);
+                    case NOT_EQUAL:
+                        predicate =
+                                criteriaBuilder.notEqual(
+                                        path,
+                                        value);
+                        break;
 
-                            case LESS_THAN ->
-                                    criteriaBuilder.lessThan(
-                                            path.as(
-                                                    Comparable.class),
-                                            (Comparable) value);
+                    case GREATER_THAN:
+                        predicate =
+                                criteriaBuilder.greaterThan(
+                                        (Path) path,
+                                        (Comparable) value);
+                        break;
 
-                            case GREATER_THAN_EQUAL ->
-                                    criteriaBuilder
-                                            .greaterThanOrEqualTo(
-                                                    path.as(
-                                                            Comparable.class),
-                                                    (Comparable) value);
+                    case LESS_THAN:
+                        predicate =
+                                criteriaBuilder.lessThan(
+                                        (Path) path,
+                                        (Comparable) value);
+                        break;
 
-                            case LESS_THAN_EQUAL ->
-                                    criteriaBuilder
-                                            .lessThanOrEqualTo(
-                                                    path.as(
-                                                            Comparable.class),
-                                                    (Comparable) value);
-                        };
+                    case GREATER_THAN_EQUAL:
+                        predicate =
+                                criteriaBuilder
+                                        .greaterThanOrEqualTo(
+                                                (Path) path,
+                                                (Comparable) value);
+                        break;
 
+                    case LESS_THAN_EQUAL:
+                        predicate =
+                                criteriaBuilder
+                                        .lessThanOrEqualTo(
+                                                (Path) path,
+                                                (Comparable) value);
+                        break;
+
+                    default:
+                        throw new IllegalArgumentException(
+                                "Unsupported operator");
+                }
                 predicates.add(predicate);
             }
 
