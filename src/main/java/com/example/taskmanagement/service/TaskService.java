@@ -1,11 +1,7 @@
 package com.example.taskmanagement.service;
 
 import com.example.taskmanagement.constant.TaskConstants;
-import com.example.taskmanagement.dto.BulkStatusUpdateDto;
-import com.example.taskmanagement.dto.TaskRequestDto;
-import com.example.taskmanagement.dto.TaskResponseDto;
-import com.example.taskmanagement.dto.TaskFilterDto;
-import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.dto.*;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
@@ -23,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -102,25 +99,49 @@ public class TaskService {
         return getPaginatedTasks(pageable);
     }
 
-    public List<TaskResponseDto> filterTasks(TaskFilterDto filter) {
-        if (filter == null) {
-            return convertToResponseDtoList(taskRepository.findAll());
+    public List<TaskResponseDto> filterTasks( TaskSearchRequestDto request) {
+        Specification<Task> specification = null;
+
+        if (request.getFilters() != null
+                && !request.getFilters().isEmpty()) {
+
+            specification =
+                    TaskSpecification.filterTasks(
+                            request.getFilters());
         }
 
-        return convertToResponseDtoList(taskRepository.findAll(TaskSpecification.filterTasks(
-                filter.getId(),
-                filter.getTitle(),
-                filter.getDescription(),
-                filter.getStatus(),
-                filter.getPriority(),
-                filter.getDueDate(),
-                filter.getCreatedDate(),
-                filter.getUpdatedDate(),
-                filter.getCompletedDate(),
-                filter.getProgressPercentage(),
-                filter.getEmployeeId(),
-                filter.getCategoryId()
-        )));
+        // Sort
+        Sort sort = Sort.unsorted();
+
+        if (request.getSortBy() != null
+                && !request.getSortBy().isBlank()) {
+
+            sort =
+                    "desc".equalsIgnoreCase(
+                            request.getSortDirection())
+                            ? Sort.by(
+                                    request.getSortBy())
+                            .descending()
+                            : Sort.by(
+                                    request.getSortBy())
+                            .ascending();
+        }
+
+        // Default pageable
+        Pageable pageable =
+                Pageable.unpaged(sort);
+
+        // Pagination override
+        if (request.getPage() != null
+                && request.getSize() != null) {
+
+            pageable =
+                    PageRequest.of(
+                            request.getPage(),
+                            request.getSize(),
+                            sort);
+        }
+        return convertToResponseDtoList(taskRepository.findAll(specification, pageable).getContent());
     }
 
     public TaskSummaryDto getTaskSummary() {

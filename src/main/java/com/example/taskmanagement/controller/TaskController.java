@@ -1,15 +1,12 @@
 package com.example.taskmanagement.controller;
 
-import com.example.taskmanagement.dto.BulkStatusUpdateDto;
-import com.example.taskmanagement.dto.TaskFilterDto;
-import com.example.taskmanagement.dto.TaskRequestDto;
-import com.example.taskmanagement.dto.TaskResponseDto;
-import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.dto.*;
 import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
+import jakarta.validation.Valid;
+
 import java.util.List;
 
-import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -75,8 +72,12 @@ public class TaskController {
     }
 
     @PostMapping("/filter")
-    public List<TaskResponseDto> filterTasks(@RequestBody(required = false) TaskFilterDto filter) {
-        return taskService.filterTasks(filter);
+    public List<TaskResponseDto> searchTasks(
+            @RequestBody
+            TaskSearchRequestDto request) {
+
+        return taskService
+                .filterTasks(request);
     }
 
     @GetMapping("/summary")
