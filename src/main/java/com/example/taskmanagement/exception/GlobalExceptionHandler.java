@@ -44,6 +44,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiErrorResponse> handleDatabaseError(DataAccessException exception,
                                                                HttpServletRequest request) {
+        exception.printStackTrace();
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Database operation failed.", request);
     }
 
