@@ -17,8 +17,30 @@ import java.util.List;
 public class TaskSpecification {
 
     public static Specification<Task> filterTasks(
-            List<FilterDto> filters) {
+            List<FilterDto> filters,
+            List<String> errors) {
 
+        // Validate filters first
+        if (filters != null
+                && !filters.isEmpty()) {
+
+            for (FilterDto filter
+                    : filters) {
+
+                try {
+
+                    validateFilter(
+                            filter);
+
+                } catch (Exception ex) {
+
+                    errors.add(
+                            ex.getMessage());
+                }
+            }
+        }
+
+        // Return specification
         return (root,
                 query,
                 criteriaBuilder) -> {
@@ -26,7 +48,8 @@ public class TaskSpecification {
             List<Predicate> predicates =
                     new ArrayList<>();
 
-            try {
+            if (filters != null
+                    && !filters.isEmpty()) {
 
                 for (FilterDto filter
                         : filters) {
@@ -38,6 +61,7 @@ public class TaskSpecification {
 
                     Object value =
                             convertValue(
+                                    filter.getField(),
                                     path.getJavaType(),
                                     filter.getValue());
 
@@ -129,153 +153,51 @@ public class TaskSpecification {
 
                         case GREATER_THAN:
 
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                throw new BadRequestRuntimeException(
-                                        "Operator > "
-                                                + "is not supported "
-                                                + "for String field: "
-                                                + filter.getField());
-                            }
-
-                            if (path.getJavaType()
-                                    .equals(
-                                            LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder.greaterThan(
-                                                path.as(
-                                                        LocalDateTime.class),
-                                                (LocalDateTime)
-                                                        value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder.greaterThan(
-                                                path.as(
-                                                        (Class<? extends Comparable>)
-                                                                path.getJavaType()),
-                                                (Comparable)
-                                                        value);
-                            }
+                            predicate =
+                                    criteriaBuilder.greaterThan(
+                                            path.as(
+                                                    (Class<? extends Comparable>)
+                                                            path.getJavaType()),
+                                            (Comparable)
+                                                    value);
 
                             break;
 
                         case LESS_THAN:
 
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                throw new BadRequestRuntimeException(
-                                        "Operator < "
-                                                + "is not supported "
-                                                + "for String field: "
-                                                + filter.getField());
-                            }
-
-                            if (path.getJavaType()
-                                    .equals(
-                                            LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder.lessThan(
-                                                path.as(
-                                                        LocalDateTime.class),
-                                                (LocalDateTime)
-                                                        value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder.lessThan(
-                                                path.as(
-                                                        (Class<? extends Comparable>)
-                                                                path.getJavaType()),
-                                                (Comparable)
-                                                        value);
-                            }
+                            predicate =
+                                    criteriaBuilder.lessThan(
+                                            path.as(
+                                                    (Class<? extends Comparable>)
+                                                            path.getJavaType()),
+                                            (Comparable)
+                                                    value);
 
                             break;
 
                         case GREATER_THAN_EQUAL:
 
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                throw new BadRequestRuntimeException(
-                                        "Operator >= "
-                                                + "is not supported "
-                                                + "for String field: "
-                                                + filter.getField());
-                            }
-
-                            if (path.getJavaType()
-                                    .equals(
-                                            LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder
-                                                .greaterThanOrEqualTo(
-                                                        path.as(
-                                                                LocalDateTime.class),
-                                                        (LocalDateTime)
-                                                                value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder
-                                                .greaterThanOrEqualTo(
-                                                        path.as(
-                                                                (Class<? extends Comparable>)
-                                                                        path.getJavaType()),
-                                                        (Comparable)
-                                                                value);
-                            }
+                            predicate =
+                                    criteriaBuilder
+                                            .greaterThanOrEqualTo(
+                                                    path.as(
+                                                            (Class<? extends Comparable>)
+                                                                    path.getJavaType()),
+                                                    (Comparable)
+                                                            value);
 
                             break;
 
                         case LESS_THAN_EQUAL:
 
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                throw new BadRequestRuntimeException(
-                                        "Operator <= "
-                                                + "is not supported "
-                                                + "for String field: "
-                                                + filter.getField());
-                            }
-
-                            if (path.getJavaType()
-                                    .equals(
-                                            LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder
-                                                .lessThanOrEqualTo(
-                                                        path.as(
-                                                                LocalDateTime.class),
-                                                        (LocalDateTime)
-                                                                value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder
-                                                .lessThanOrEqualTo(
-                                                        path.as(
-                                                                (Class<? extends Comparable>)
-                                                                        path.getJavaType()),
-                                                        (Comparable)
-                                                                value);
-                            }
+                            predicate =
+                                    criteriaBuilder
+                                            .lessThanOrEqualTo(
+                                                    path.as(
+                                                            (Class<? extends Comparable>)
+                                                                    path.getJavaType()),
+                                                    (Comparable)
+                                                            value);
 
                             break;
 
@@ -288,57 +210,134 @@ public class TaskSpecification {
                     predicates.add(
                             predicate);
                 }
-
-                return criteriaBuilder.and(
-                        predicates.toArray(
-                                new Predicate[0]));
-
-            } catch (
-                    BadRequestRuntimeException ex) {
-
-                throw ex;
-
-            } catch (
-                    Exception ex) {
-
-                throw new BadRequestRuntimeException(
-                        ex.getMessage());
             }
+
+            return criteriaBuilder.and(
+                    predicates.toArray(
+                            new Predicate[0]));
         };
+    }
+
+    private static void validateFilter(
+            FilterDto filter) {
+
+        List<String> validFields =
+                List.of(
+                        "id",
+                        "title",
+                        "description",
+                        "status",
+                        "priority",
+                        "dueDate",
+                        "createdDate",
+                        "updatedDate",
+                        "completedDate",
+                        "progressPercentage",
+                        "employee.id",
+                        "employee.name",
+                        "category.id",
+                        "category.name");
+
+        // Validate field
+        if (!validFields.contains(
+                filter.getField())) {
+
+            throw new BadRequestRuntimeException(
+                    "Invalid filter field: "
+                            + filter.getField());
+        }
+
+        // Validate operator
+        FilterOperator operator =
+                FilterOperator.from(
+                        filter.getOperator());
+
+        Class<?> targetType =
+                getFieldType(
+                        filter.getField());
+
+        // Validate String operators
+        if (targetType.equals(
+                String.class)
+                && operator != FilterOperator.EQUAL
+                && operator
+                != FilterOperator.NOT_EQUAL) {
+
+            throw new BadRequestRuntimeException(
+                    "Operator "
+                            + filter.getOperator()
+                            + " is not supported "
+                            + "for String field: "
+                            + filter.getField());
+        }
+
+        // Validate value
+        convertValue(
+                filter.getField(),
+                targetType,
+                filter.getValue());
     }
 
     private static Path<?> getPath(
             Root<Task> root,
             String field) {
 
-        try {
+        if (field.contains(".")) {
 
-            if (field.contains(".")) {
+            String[] parts =
+                    field.split("\\.");
 
-                String[] parts =
-                        field.split("\\.");
+            Path<?> path =
+                    root.get(
+                            parts[0]);
 
-                return root.get(parts[0])
-                        .get(parts[1]);
+            for (int i = 1;
+                 i < parts.length;
+                 i++) {
+
+                path =
+                        path.get(
+                                parts[i]);
             }
 
-            return root.get(field);
+            return path;
+        }
 
-        } catch (
-                IllegalArgumentException ex) {
+        return root.get(field);
+    }
 
-            throw new BadRequestRuntimeException(
-                    "Invalid filter field: "
-                            + field);
+    private static Class<?> getFieldType(
+            String field) {
+
+        switch (field) {
+
+            case "id":
+            case "employee.id":
+            case "category.id":
+                return Long.class;
+
+            case "progressPercentage":
+                return Integer.class;
+
+            case "dueDate":
+            case "createdDate":
+            case "updatedDate":
+            case "completedDate":
+                return LocalDateTime.class;
+
+            default:
+                return String.class;
         }
     }
 
     private static Object convertValue(
+            String field,
             Class<?> targetType,
             Object value) {
 
         try {
 
+            // Long
             if (targetType.equals(
                     Long.class)) {
 
@@ -346,6 +345,7 @@ public class TaskSpecification {
                         value.toString());
             }
 
+            // Integer
             if (targetType.equals(
                     Integer.class)) {
 
@@ -353,9 +353,11 @@ public class TaskSpecification {
                         Integer.valueOf(
                                 value.toString());
 
-                // Validate percentage
-                if (convertedValue < 0
-                        || convertedValue > 100) {
+                // Only for progressPercentage
+                if ("progressPercentage".equals(
+                        field)
+                        && (convertedValue < 0
+                        || convertedValue > 100)) {
 
                     throw new BadRequestRuntimeException(
                             "Progress percentage "
@@ -366,11 +368,38 @@ public class TaskSpecification {
                 return convertedValue;
             }
 
+            // Date
             if (targetType.equals(
                     LocalDateTime.class)) {
 
                 return LocalDateTime.parse(
                         value.toString());
+            }
+
+            // Status validation
+            if ("status".equals(
+                    field)) {
+
+                List<String> validStatus =
+                        List.of(
+                                "TODO",
+                                "DONE");
+
+                String status =
+                        value.toString()
+                                .toUpperCase();
+
+                if (!validStatus.contains(
+                        status)) {
+
+                    throw new BadRequestRuntimeException(
+                            "Invalid status value: "
+                                    + value
+                                    + ". Supported values: "
+                                    + validStatus);
+                }
+
+                return status;
             }
 
             return value;
