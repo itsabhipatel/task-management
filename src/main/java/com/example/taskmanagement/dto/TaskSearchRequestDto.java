@@ -6,8 +6,8 @@ public class TaskSearchRequestDto {
 
     private List<FilterDto> filters;
 
-    private String sortBy;
-    private String sortDirection;
+    private List<String> sortBy;
+    private List<String> sortDirection;
 
     private Integer page;
     private Integer size;
@@ -20,19 +20,19 @@ public class TaskSearchRequestDto {
         this.filters = filters;
     }
 
-    public String getSortBy() {
+    public List<String> getSortBy() {
         return sortBy;
     }
 
-    public void setSortBy(String sortBy) {
+    public void setSortBy(List<String> sortBy) {
         this.sortBy = sortBy;
     }
 
-    public String getSortDirection() {
+    public List<String> getSortDirection() {
         return sortDirection;
     }
 
-    public void setSortDirection(String sortDirection) {
+    public void setSortDirection(List<String> sortDirection) {
         this.sortDirection = sortDirection;
     }
 
