@@ -34,7 +34,8 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
             IllegalArgumentException.class,
-            MethodArgumentNotValidException.class
+            MethodArgumentNotValidException.class,
+            BadRequestRuntimeException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception exception,
                                                             HttpServletRequest request) {

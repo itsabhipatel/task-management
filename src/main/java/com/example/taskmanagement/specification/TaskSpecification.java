@@ -3,12 +3,14 @@ package com.example.taskmanagement.specification;
 import com.example.taskmanagement.dto.FilterDto;
 import com.example.taskmanagement.entity.Task;
 import com.example.taskmanagement.enums.FilterOperator;
+import com.example.taskmanagement.exception.BadRequestRuntimeException;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,204 +19,291 @@ public class TaskSpecification {
     public static Specification<Task> filterTasks(
             List<FilterDto> filters) {
 
-        return (root, query, criteriaBuilder) -> {
+        return (root,
+                query,
+                criteriaBuilder) -> {
 
             List<Predicate> predicates =
                     new ArrayList<>();
 
-            for (FilterDto filter : filters) {
+            try {
 
-                Path<?> path =
-                        getPath(root,
-                                filter.getField());
+                for (FilterDto filter
+                        : filters) {
 
-                Object value =
-                        convertValue(
-                                path.getJavaType(),
-                                filter.getValue());
+                    Path<?> path =
+                            getPath(
+                                    root,
+                                    filter.getField());
 
-                FilterOperator operator =
-                        FilterOperator.from(
-                                filter.getOperator());
+                    Object value =
+                            convertValue(
+                                    path.getJavaType(),
+                                    filter.getValue());
 
-                Predicate predicate;
+                    FilterOperator operator =
+                            FilterOperator.from(
+                                    filter.getOperator());
 
-                switch (operator) {
+                    Predicate predicate;
 
-                    case EQUAL:
+                    switch (operator) {
 
-                        if (path.getJavaType()
-                                .equals(String.class)) {
+                        case EQUAL:
 
-                            predicate =
-                                    criteriaBuilder.like(
-                                            criteriaBuilder.lower(
-                                                    path.as(
-                                                            String.class)),
-                                            "%" +
-                                                    value.toString()
-                                                            .toLowerCase()
-                                                    + "%");
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
 
-                        } else if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                                predicate =
+                                        criteriaBuilder.like(
+                                                criteriaBuilder.lower(
+                                                        path.as(
+                                                                String.class)),
+                                                "%"
+                                                        + value
+                                                        .toString()
+                                                        .toLowerCase()
+                                                        + "%");
 
-                            predicate =
-                                    criteriaBuilder.equal(
-                                            path.as(
-                                                    LocalDateTime.class),
-                                            (LocalDateTime) value);
+                            } else if (
+                                    path.getJavaType()
+                                            .equals(
+                                                    LocalDateTime.class)) {
 
-                        } else {
+                                predicate =
+                                        criteriaBuilder.equal(
+                                                path.as(
+                                                        LocalDateTime.class),
+                                                (LocalDateTime)
+                                                        value);
 
-                            predicate =
-                                    criteriaBuilder.equal(
-                                            path,
-                                            value);
-                        }
+                            } else {
 
-                        break;
+                                predicate =
+                                        criteriaBuilder.equal(
+                                                path,
+                                                value);
+                            }
 
-                    case NOT_EQUAL:
+                            break;
 
-                        if (path.getJavaType()
-                                .equals(String.class)) {
+                        case NOT_EQUAL:
 
-                            predicate =
-                                    criteriaBuilder.notLike(
-                                            criteriaBuilder.lower(
-                                                    path.as(
-                                                            String.class)),
-                                            "%" +
-                                                    value.toString()
-                                                            .toLowerCase()
-                                                    + "%");
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
 
-                        } else if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                                predicate =
+                                        criteriaBuilder.notLike(
+                                                criteriaBuilder.lower(
+                                                        path.as(
+                                                                String.class)),
+                                                "%"
+                                                        + value
+                                                        .toString()
+                                                        .toLowerCase()
+                                                        + "%");
 
-                            predicate =
-                                    criteriaBuilder.notEqual(
-                                            path.as(
-                                                    LocalDateTime.class),
-                                            (LocalDateTime) value);
+                            } else if (
+                                    path.getJavaType()
+                                            .equals(
+                                                    LocalDateTime.class)) {
 
-                        } else {
+                                predicate =
+                                        criteriaBuilder.notEqual(
+                                                path.as(
+                                                        LocalDateTime.class),
+                                                (LocalDateTime)
+                                                        value);
 
-                            predicate =
-                                    criteriaBuilder.notEqual(
-                                            path,
-                                            value);
-                        }
+                            } else {
 
-                        break;
+                                predicate =
+                                        criteriaBuilder.notEqual(
+                                                path,
+                                                value);
+                            }
 
-                    case GREATER_THAN:
+                            break;
 
-                        if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                        case GREATER_THAN:
 
-                            predicate =
-                                    criteriaBuilder.greaterThan(
-                                            path.as(
-                                                    LocalDateTime.class),
-                                            (LocalDateTime) value);
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
 
-                        } else {
+                                throw new BadRequestRuntimeException(
+                                        "Operator > "
+                                                + "is not supported "
+                                                + "for String field: "
+                                                + filter.getField());
+                            }
 
-                            predicate =
-                                    criteriaBuilder.greaterThan(
-                                            path.as(
-                                                    (Class<? extends Comparable>)
-                                                            path.getJavaType()),
-                                            (Comparable) value);
-                        }
+                            if (path.getJavaType()
+                                    .equals(
+                                            LocalDateTime.class)) {
 
-                        break;
+                                predicate =
+                                        criteriaBuilder.greaterThan(
+                                                path.as(
+                                                        LocalDateTime.class),
+                                                (LocalDateTime)
+                                                        value);
 
-                    case LESS_THAN:
+                            } else {
 
-                        if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                                predicate =
+                                        criteriaBuilder.greaterThan(
+                                                path.as(
+                                                        (Class<? extends Comparable>)
+                                                                path.getJavaType()),
+                                                (Comparable)
+                                                        value);
+                            }
 
-                            predicate =
-                                    criteriaBuilder.lessThan(
-                                            path.as(
-                                                    LocalDateTime.class),
-                                            (LocalDateTime) value);
+                            break;
 
-                        } else {
+                        case LESS_THAN:
 
-                            predicate =
-                                    criteriaBuilder.lessThan(
-                                            path.as(
-                                                    (Class<? extends Comparable>)
-                                                            path.getJavaType()),
-                                            (Comparable) value);
-                        }
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
 
-                        break;
+                                throw new BadRequestRuntimeException(
+                                        "Operator < "
+                                                + "is not supported "
+                                                + "for String field: "
+                                                + filter.getField());
+                            }
 
-                    case GREATER_THAN_EQUAL:
+                            if (path.getJavaType()
+                                    .equals(
+                                            LocalDateTime.class)) {
 
-                        if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                                predicate =
+                                        criteriaBuilder.lessThan(
+                                                path.as(
+                                                        LocalDateTime.class),
+                                                (LocalDateTime)
+                                                        value);
 
-                            predicate =
-                                    criteriaBuilder
-                                            .greaterThanOrEqualTo(
-                                                    path.as(
-                                                            LocalDateTime.class),
-                                                    (LocalDateTime) value);
+                            } else {
 
-                        } else {
+                                predicate =
+                                        criteriaBuilder.lessThan(
+                                                path.as(
+                                                        (Class<? extends Comparable>)
+                                                                path.getJavaType()),
+                                                (Comparable)
+                                                        value);
+                            }
 
-                            predicate =
-                                    criteriaBuilder
-                                            .greaterThanOrEqualTo(
-                                                    path.as(
-                                                            (Class<? extends Comparable>)
-                                                                    path.getJavaType()),
-                                                    (Comparable) value);
-                        }
+                            break;
 
-                        break;
+                        case GREATER_THAN_EQUAL:
 
-                    case LESS_THAN_EQUAL:
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
 
-                        if (path.getJavaType()
-                                .equals(LocalDateTime.class)) {
+                                throw new BadRequestRuntimeException(
+                                        "Operator >= "
+                                                + "is not supported "
+                                                + "for String field: "
+                                                + filter.getField());
+                            }
 
-                            predicate =
-                                    criteriaBuilder
-                                            .lessThanOrEqualTo(
-                                                    path.as(
-                                                            LocalDateTime.class),
-                                                    (LocalDateTime) value);
+                            if (path.getJavaType()
+                                    .equals(
+                                            LocalDateTime.class)) {
 
-                        } else {
+                                predicate =
+                                        criteriaBuilder
+                                                .greaterThanOrEqualTo(
+                                                        path.as(
+                                                                LocalDateTime.class),
+                                                        (LocalDateTime)
+                                                                value);
 
-                            predicate =
-                                    criteriaBuilder
-                                            .lessThanOrEqualTo(
-                                                    path.as(
-                                                            (Class<? extends Comparable>)
-                                                                    path.getJavaType()),
-                                                    (Comparable) value);
-                        }
+                            } else {
 
-                        break;
+                                predicate =
+                                        criteriaBuilder
+                                                .greaterThanOrEqualTo(
+                                                        path.as(
+                                                                (Class<? extends Comparable>)
+                                                                        path.getJavaType()),
+                                                        (Comparable)
+                                                                value);
+                            }
 
-                    default:
-                        throw new IllegalArgumentException(
-                                "Unsupported operator");
+                            break;
+
+                        case LESS_THAN_EQUAL:
+
+                            if (path.getJavaType()
+                                    .equals(
+                                            String.class)) {
+
+                                throw new BadRequestRuntimeException(
+                                        "Operator <= "
+                                                + "is not supported "
+                                                + "for String field: "
+                                                + filter.getField());
+                            }
+
+                            if (path.getJavaType()
+                                    .equals(
+                                            LocalDateTime.class)) {
+
+                                predicate =
+                                        criteriaBuilder
+                                                .lessThanOrEqualTo(
+                                                        path.as(
+                                                                LocalDateTime.class),
+                                                        (LocalDateTime)
+                                                                value);
+
+                            } else {
+
+                                predicate =
+                                        criteriaBuilder
+                                                .lessThanOrEqualTo(
+                                                        path.as(
+                                                                (Class<? extends Comparable>)
+                                                                        path.getJavaType()),
+                                                        (Comparable)
+                                                                value);
+                            }
+
+                            break;
+
+                        default:
+
+                            throw new BadRequestRuntimeException(
+                                    "Unsupported operator");
+                    }
+
+                    predicates.add(
+                            predicate);
                 }
-                predicates.add(predicate);
-            }
 
-            return criteriaBuilder.and(
-                    predicates.toArray(
-                            new Predicate[0]));
+                return criteriaBuilder.and(
+                        predicates.toArray(
+                                new Predicate[0]));
+
+            } catch (
+                    BadRequestRuntimeException ex) {
+
+                throw ex;
+
+            } catch (
+                    Exception ex) {
+
+                throw new BadRequestRuntimeException(
+                        ex.getMessage());
+            }
         };
     }
 
@@ -222,37 +311,85 @@ public class TaskSpecification {
             Root<Task> root,
             String field) {
 
-        if (field.contains(".")) {
+        try {
 
-            String[] parts =
-                    field.split("\\.");
+            if (field.contains(".")) {
 
-            return root.get(parts[0])
-                    .get(parts[1]);
+                String[] parts =
+                        field.split("\\.");
+
+                return root.get(parts[0])
+                        .get(parts[1]);
+            }
+
+            return root.get(field);
+
+        } catch (
+                IllegalArgumentException ex) {
+
+            throw new BadRequestRuntimeException(
+                    "Invalid filter field: "
+                            + field);
         }
-
-        return root.get(field);
     }
 
     private static Object convertValue(
             Class<?> targetType,
             Object value) {
 
-        if (targetType.equals(Long.class)) {
-            return Long.valueOf(
-                    value.toString());
-        }
+        try {
 
-        if (targetType.equals(Integer.class)) {
-            return Integer.valueOf(
-                    value.toString());
-        }
+            if (targetType.equals(
+                    Long.class)) {
 
-        if (targetType.equals(LocalDateTime.class)) {
-            return LocalDateTime.parse(
-                    value.toString());
-        }
+                return Long.valueOf(
+                        value.toString());
+            }
 
-        return value;
+            if (targetType.equals(
+                    Integer.class)) {
+
+                Integer convertedValue =
+                        Integer.valueOf(
+                                value.toString());
+
+                // Validate percentage
+                if (convertedValue < 0
+                        || convertedValue > 100) {
+
+                    throw new BadRequestRuntimeException(
+                            "Progress percentage "
+                                    + "must be between "
+                                    + "0 and 100");
+                }
+
+                return convertedValue;
+            }
+
+            if (targetType.equals(
+                    LocalDateTime.class)) {
+
+                return LocalDateTime.parse(
+                        value.toString());
+            }
+
+            return value;
+
+        } catch (
+                NumberFormatException ex) {
+
+            throw new BadRequestRuntimeException(
+                    "Invalid value: "
+                            + value);
+
+        } catch (
+                DateTimeParseException ex) {
+
+            throw new BadRequestRuntimeException(
+                    "Invalid date value: "
+                            + value
+                            + ". Expected format: "
+                            + "yyyy-MM-ddTHH:mm:ss");
+        }
     }
 }
