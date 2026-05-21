@@ -1,36 +1,31 @@
 package com.example.taskmanagement.dto;
 
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
 import java.time.LocalDateTime;
 
-public class TaskRequestDto {
+public class TaskResponseDto {
 
-    @NotBlank(message = "Title cannot be blank")
-    @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+    private Long id;
     private String title;
-    @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
-    @NotBlank(message = "Status cannot be blank")
     private String status;
-    @NotBlank(message = "Priority cannot be blank")
     private String priority;
-    @NotNull(message = "Due date cannot be null")
-    @FutureOrPresent(message = "Due date must be in the present or future")
     private LocalDateTime dueDate;
-    @NotNull(message = "Progress percentage cannot be null")
-    @Min(value = 0, message = "Progress percentage must be at least 0")
-    @Max(value = 100, message = "Progress percentage cannot exceed 100")
+    private LocalDateTime createdDate;
+    private LocalDateTime updatedDate;
+    private LocalDateTime completedDate;
     private Integer progressPercentage;
-    @NotNull(message = "Employee ID cannot be null")
     private Long employeeId;
-    @NotNull(message = "Category ID cannot be null")
+    private String employeeName;
     private Long categoryId;
+    private String categoryName;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getTitle() {
         return title;
@@ -72,6 +67,30 @@ public class TaskRequestDto {
         this.dueDate = dueDate;
     }
 
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public LocalDateTime getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(LocalDateTime updatedDate) {
+        this.updatedDate = updatedDate;
+    }
+
+    public LocalDateTime getCompletedDate() {
+        return completedDate;
+    }
+
+    public void setCompletedDate(LocalDateTime completedDate) {
+        this.completedDate = completedDate;
+    }
+
     public Integer getProgressPercentage() {
         return progressPercentage;
     }
@@ -79,6 +98,7 @@ public class TaskRequestDto {
     public void setProgressPercentage(Integer progressPercentage) {
         this.progressPercentage = progressPercentage;
     }
+
 
     public Long getEmployeeId() {
         return employeeId;
@@ -88,11 +108,27 @@ public class TaskRequestDto {
         this.employeeId = employeeId;
     }
 
+    public String getEmployeeName() {
+        return employeeName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
+
     public Long getCategoryId() {
         return categoryId;
     }
 
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 }
