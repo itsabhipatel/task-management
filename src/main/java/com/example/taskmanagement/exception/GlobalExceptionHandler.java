@@ -1,8 +1,12 @@
 package com.example.taskmanagement.exception;
 
 import com.example.taskmanagement.dto.ApiErrorResponse;
+import com.example.taskmanagement.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,8 +38,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
             IllegalArgumentException.class,
-            MethodArgumentNotValidException.class,
-            BadRequestRuntimeException.class
+            MethodArgumentNotValidException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception exception,
                                                             HttpServletRequest request) {
@@ -69,4 +72,41 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(errorResponse);
     }
+
+    @ExceptionHandler(BadRequestRuntimeException.class)
+    public ResponseEntity<?>  handleBadRequestRuntimeException(BadRequestRuntimeException ex) {
+
+        // Multiple errors
+        if (ex.getErrors()
+                != null
+                && !ex.getErrors()
+                .isEmpty()) {
+
+            Map<String, Object>
+                    response =
+                    new HashMap<>();
+
+            response.put(
+                    "errors",
+                    ex.getErrors());
+
+            return ResponseEntity
+                    .status(
+                            HttpStatus.BAD_REQUEST)
+                    .body(response);
+        }
+
+        // Single error
+        ErrorResponse
+                errorResponse =
+                new ErrorResponse(
+                        ex.getMessage());
+
+        return ResponseEntity
+                .status(
+                        HttpStatus.BAD_REQUEST)
+                .body(
+                        errorResponse);
+    }
+
 }
