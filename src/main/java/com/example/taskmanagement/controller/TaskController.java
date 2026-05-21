@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -73,8 +74,7 @@ public class TaskController {
 
     @PostMapping("/filter")
     public List<TaskResponseDto> searchTasks(
-            @RequestBody
-            TaskSearchRequestDto request) {
+            @RequestBody(required = false) TaskSearchRequestDto request) throws BadRequestException {
 
         return taskService
                 .filterTasks(request);
