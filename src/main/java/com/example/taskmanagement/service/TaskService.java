@@ -5,6 +5,7 @@ import com.example.taskmanagement.dto.*;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
+import com.example.taskmanagement.exception.BadRequestRuntimeException;
 import com.example.taskmanagement.repository.CategoryRepository;
 import com.example.taskmanagement.repository.EmployeeRepository;
 import com.example.taskmanagement.repository.TaskRepository;
@@ -14,6 +15,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.jpa.domain.JpaSort;
+
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -99,37 +103,145 @@ public class TaskService {
         return getPaginatedTasks(pageable);
     }
 
-    public List<TaskResponseDto> filterTasks( TaskSearchRequestDto request) {
-        Specification<Task> specification = null;
+    public List<TaskResponseDto> filterTasks(
+            TaskSearchRequestDto request)
+            throws BadRequestException {
 
+        if (request == null) {
+
+            request =
+                    new TaskSearchRequestDto();
+        }
+
+        List<String> errors = new ArrayList<>();
+
+        Specification<Task> specification =
+                null;
+
+        // Filters
         if (request.getFilters() != null
                 && !request.getFilters().isEmpty()) {
 
             specification =
                     TaskSpecification.filterTasks(
-                            request.getFilters());
+                            request.getFilters(), errors);
         }
 
         // Sort
         Sort sort = Sort.unsorted();
 
-        if (request.getSortBy() != null
-                && !request.getSortBy().isBlank()) {
+        List<String> validSortFields =
+                List.of(
+                        "id",
+                        "title",
+                        "status",
+                        "priority",
+                        "dueDate",
+                        "createdDate",
+                        "updatedDate",
+                        "completedDate",
+                        "progressPercentage",
+                        "employee.id",
+                        "employee.name",
+                        "category.id",
+                        "category.name");
 
-            sort =
-                    "desc".equalsIgnoreCase(
-                            request.getSortDirection())
-                            ? Sort.by(
-                                    request.getSortBy())
-                            .descending()
-                            : Sort.by(
-                                    request.getSortBy())
-                            .ascending();
+        if (request.getSortBy() != null
+                && !request.getSortBy().isEmpty()) {
+
+            // Validate direction size
+            if (request.getSortDirection() != null
+                    && request.getSortDirection().size()
+                    != request.getSortBy().size()) {
+
+                errors.add("sortBy and sortDirection must have same size");
+
+            }
+
+            List<Sort.Order> orders =
+                    new ArrayList<>();
+
+            for (int i = 0;
+                 i < request.getSortBy().size();
+                 i++) {
+
+                String sortField =
+                        request.getSortBy().get(i);
+
+                // Validate sortBy
+                if (!validSortFields.contains(
+                        sortField)) {
+
+                    errors.add("Invalid sortBy field: "
+                            + sortField);
+
+
+                }
+
+                String direction =
+                        request.getSortDirection() != null
+                                && i
+                                < request
+                                .getSortDirection()
+                                .size()
+                                ? request
+                                .getSortDirection()
+                                .get(i)
+                                : "asc";
+
+                // Validate direction
+                if (!direction.equalsIgnoreCase(
+                        "asc")
+                        && !direction.equalsIgnoreCase(
+                        "desc")) {
+
+                    errors.add(
+                            "Invalid sortDirection: "
+                                    + direction
+                                    + ". Supported values: "
+                                    + "asc, desc");
+
+                }
+
+                orders.add(
+                        new Sort.Order(
+                                direction.equalsIgnoreCase(
+                                        "desc")
+                                        ? Sort.Direction.DESC
+                                        : Sort.Direction.ASC,
+                                sortField));
+            }
+
+            sort = Sort.by(orders);
         }
 
-        // Default pageable
+        // Validate page
+        if (request.getPage() != null
+                && request.getPage() < 0) {
+
+            errors.add("Page number cannot be less than 0");
+
+        }
+
+        // Validate size
+        if (request.getSize() != null
+                && request.getSize() <= 0) {
+
+            errors.add("Page size must be greater than 0");
+
+        }
+        if (!errors.isEmpty()) {
+
+            throw new BadRequestRuntimeException(
+                    errors);
+        }
+
+        // Default pageable with sorting
         Pageable pageable =
-                Pageable.unpaged(sort);
+                PageRequest.of(
+                        0,
+                        Integer.MAX_VALUE,
+                        sort);
 
         // Pagination override
         if (request.getPage() != null
@@ -141,7 +253,14 @@ public class TaskService {
                             request.getSize(),
                             sort);
         }
-        return convertToResponseDtoList(taskRepository.findAll(specification, pageable).getContent());
+
+
+
+        return convertToResponseDtoList(
+                taskRepository.findAll(
+                                specification,
+                                pageable)
+                        .getContent());
     }
 
     public TaskSummaryDto getTaskSummary() {
@@ -300,7 +419,7 @@ public class TaskService {
         taskResponseDto.setUpdatedDate(task.getUpdatedDate());
         taskResponseDto.setCompletedDate(task.getCompletedDate());
         taskResponseDto.setProgressPercentage(task.getProgressPercentage());
-        taskResponseDto.setOverdue(isOverdue(task));
+
 
         if (task.getEmployee() != null) {
             taskResponseDto.setEmployeeId(task.getEmployee().getId());
