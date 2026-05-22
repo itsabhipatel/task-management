@@ -27,6 +27,7 @@ public class TaskSpecification {
             for (FilterDto filter
                     : filters) {
 
+                // Validate null/blank field, operator, value
                 if (shouldIgnoreFilter(
                         filter,
                         errors)) {
@@ -47,6 +48,13 @@ public class TaskSpecification {
             }
         }
 
+        // Stop execution if validation failed
+        if (!errors.isEmpty()) {
+
+            throw new BadRequestRuntimeException(
+                    errors);
+        }
+
         // Return specification
         return (root,
                 query,
@@ -61,7 +69,7 @@ public class TaskSpecification {
                 for (FilterDto filter
                         : filters) {
 
-                    // Skip invalid filters
+                    // Skip invalid filters safely
                     if (filter == null
                             || isNullOrBlank(
                             filter.getField())
@@ -437,7 +445,7 @@ public class TaskSpecification {
                     "Invalid date value: "
                             + value
                             + ". Expected format: "
-                            + "yyyy-MMddTHH:mm:ss");
+                            + "yyyy-MM-ddTHH:mm:ss");
         }
     }
 
@@ -480,9 +488,7 @@ public class TaskSpecification {
                 filter.getValue())) {
 
             errors.add(
-                    "Filter value cannot be null or empty "
-                            + "for field: "
-                            + filter.getField());
+                    "Filter value cannot be null or empty");
 
             hasError =
                     true;
