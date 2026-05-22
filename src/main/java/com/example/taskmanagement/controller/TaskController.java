@@ -118,17 +118,6 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @PatchMapping("/{id}/progress")
-    public ResponseEntity<TaskResponseDto> updateTaskProgress(@PathVariable Long id,
-                                                              @RequestParam Integer progressPercentage) {
-        TaskResponseDto task = taskService.updateTaskProgress(id, progressPercentage);
-
-        if (task == null) {
-            throw new ResourceNotFoundException("Task not found with id: " + id);
-        }
-
-        return ResponseEntity.ok(task);
-    }
 
     @PatchMapping("/bulk/status")
     public List<TaskResponseDto> bulkUpdateTaskStatus(@Valid @RequestBody BulkStatusUpdateDto bulkStatusUpdateDto) {
