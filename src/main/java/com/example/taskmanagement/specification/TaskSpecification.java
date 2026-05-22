@@ -4,19 +4,33 @@ import com.example.taskmanagement.dto.FilterDto;
 import com.example.taskmanagement.entity.Task;
 import com.example.taskmanagement.enums.FilterOperator;
 import com.example.taskmanagement.exception.BadRequestRuntimeException;
+import com.example.taskmanagement.specification.filter.FilterOperatorFactory;
+import com.example.taskmanagement.specification.filter.FilterOperatorStrategy;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class TaskSpecification {
 
-    public static Specification<Task> filterTasks(
+    private final FilterOperatorFactory operatorFactory;
+
+    public TaskSpecification(
+            FilterOperatorFactory operatorFactory) {
+
+        this.operatorFactory =
+                operatorFactory;
+    }
+
+
+    public Specification<Task> filterTasks(
             List<FilterDto> filters,
             List<String> errors) {
 
@@ -85,147 +99,16 @@ public class TaskSpecification {
                                     path.getJavaType(),
                                     filter.getValue());
 
-                    FilterOperator operator =
-                            FilterOperator.from(
-                                    filter.getOperator());
 
-                    Predicate predicate;
+                   FilterOperatorStrategy filterOperatorStrategy = operatorFactory
+                           .getStrategy(filter.getOperator());
 
-                    switch (operator) {
+                    Predicate predicate = filterOperatorStrategy.apply(
+                            criteriaBuilder,
+                            path,
+                            value);
 
-                        case EQUAL:
 
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                predicate =
-                                        criteriaBuilder.like(
-                                                criteriaBuilder.lower(
-                                                        path.as(
-                                                                String.class)),
-                                                "%"
-                                                        + value
-                                                        .toString()
-                                                        .toLowerCase()
-                                                        + "%");
-
-                            } else if (
-                                    path.getJavaType()
-                                            .equals(
-                                                    LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder.equal(
-                                                path.as(
-                                                        LocalDateTime.class),
-                                                (LocalDateTime)
-                                                        value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder.equal(
-                                                path,
-                                                value);
-                            }
-
-                            break;
-
-                        case NOT_EQUAL:
-
-                            if (path.getJavaType()
-                                    .equals(
-                                            String.class)) {
-
-                                predicate =
-                                        criteriaBuilder.notLike(
-                                                criteriaBuilder.lower(
-                                                        path.as(
-                                                                String.class)),
-                                                "%"
-                                                        + value
-                                                        .toString()
-                                                        .toLowerCase()
-                                                        + "%");
-
-                            } else if (
-                                    path.getJavaType()
-                                            .equals(
-                                                    LocalDateTime.class)) {
-
-                                predicate =
-                                        criteriaBuilder.notEqual(
-                                                path.as(
-                                                        LocalDateTime.class),
-                                                (LocalDateTime)
-                                                        value);
-
-                            } else {
-
-                                predicate =
-                                        criteriaBuilder.notEqual(
-                                                path,
-                                                value);
-                            }
-
-                            break;
-
-                        case GREATER_THAN:
-
-                            predicate =
-                                    criteriaBuilder.greaterThan(
-                                            path.as(
-                                                    (Class<? extends Comparable>)
-                                                            path.getJavaType()),
-                                            (Comparable)
-                                                    value);
-
-                            break;
-
-                        case LESS_THAN:
-
-                            predicate =
-                                    criteriaBuilder.lessThan(
-                                            path.as(
-                                                    (Class<? extends Comparable>)
-                                                            path.getJavaType()),
-                                            (Comparable)
-                                                    value);
-
-                            break;
-
-                        case GREATER_THAN_EQUAL:
-
-                            predicate =
-                                    criteriaBuilder
-                                            .greaterThanOrEqualTo(
-                                                    path.as(
-                                                            (Class<? extends Comparable>)
-                                                                    path.getJavaType()),
-                                                    (Comparable)
-                                                            value);
-
-                            break;
-
-                        case LESS_THAN_EQUAL:
-
-                            predicate =
-                                    criteriaBuilder
-                                            .lessThanOrEqualTo(
-                                                    path.as(
-                                                            (Class<? extends Comparable>)
-                                                                    path.getJavaType()),
-                                                    (Comparable)
-                                                            value);
-
-                            break;
-
-                        default:
-
-                            throw new BadRequestRuntimeException(
-                                    "Unsupported operator");
-                    }
 
                     predicates.add(
                             predicate);

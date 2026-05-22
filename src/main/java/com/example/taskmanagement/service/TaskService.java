@@ -33,6 +33,8 @@ public class TaskService {
     private final EmployeeRepository employeeRepository;
     private final CategoryRepository categoryRepository;
 
+    private final TaskSpecification taskSpecification;
+
     @Value("${task.default-status:" + TaskConstants.STATUS_TODO + "}")
     private String defaultStatus = TaskConstants.STATUS_TODO;
 
@@ -47,10 +49,12 @@ public class TaskService {
 
     public TaskService(TaskRepository taskRepository,
                        EmployeeRepository employeeRepository,
-                       CategoryRepository categoryRepository) {
+                       CategoryRepository categoryRepository,
+                       TaskSpecification taskSpecification) {
         this.taskRepository = taskRepository;
         this.employeeRepository = employeeRepository;
         this.categoryRepository = categoryRepository;
+        this.taskSpecification = taskSpecification;
     }
 
     public List<TaskResponseDto> getAllTasks() {
@@ -123,7 +127,7 @@ public class TaskService {
                 && !request.getFilters().isEmpty()) {
 
             specification =
-                    TaskSpecification.filterTasks(
+                    taskSpecification.filterTasks(
                             request.getFilters(), errors);
         }
 
