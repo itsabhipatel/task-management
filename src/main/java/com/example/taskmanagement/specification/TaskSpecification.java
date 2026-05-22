@@ -27,6 +27,11 @@ public class TaskSpecification {
             for (FilterDto filter
                     : filters) {
 
+                if (shouldIgnoreFilter(
+                        filter)) {
+
+                    continue;
+                }
                 try {
 
                     validateFilter(
@@ -53,6 +58,12 @@ public class TaskSpecification {
 
                 for (FilterDto filter
                         : filters) {
+
+                    if (shouldIgnoreFilter(
+                            filter)) {
+
+                        continue;
+                    }
 
                     Path<?> path =
                             getPath(
@@ -420,5 +431,30 @@ public class TaskSpecification {
                             + ". Expected format: "
                             + "yyyy-MM-ddTHH:mm:ss");
         }
+    }
+
+    private static boolean shouldIgnoreFilter(
+            FilterDto filter) {
+
+        if (filter == null) {
+            return true;
+        }
+
+        Object value =
+                filter.getValue();
+
+        // Ignore null
+        if (value == null) {
+            return true;
+        }
+
+        // Convert everything to string
+        String stringValue =
+                value.toString();
+
+        // Ignore "", "   "
+        return stringValue
+                .trim()
+                .isEmpty();
     }
 }
