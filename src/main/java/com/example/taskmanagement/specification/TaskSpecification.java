@@ -35,16 +35,9 @@ public class TaskSpecification {
                     continue;
                 }
 
-                try {
-
-                    validateFilter(
-                            filter);
-
-                } catch (Exception ex) {
-
-                    errors.add(
-                            ex.getMessage());
-                }
+                validateFilter(
+                        filter,
+                        errors);
             }
         }
 
@@ -246,7 +239,8 @@ public class TaskSpecification {
     }
 
     private static void validateFilter(
-            FilterDto filter) {
+            FilterDto filter,
+            List<String> errors) {
 
         List<String> validFields =
                 List.of(
@@ -269,28 +263,43 @@ public class TaskSpecification {
         if (!validFields.contains(
                 filter.getField())) {
 
-            throw new BadRequestRuntimeException(
+            errors.add(
                     "Invalid filter field: "
                             + filter.getField());
+
+            return;
         }
 
         // Validate operator
         FilterOperator operator =
-                FilterOperator.from(
-                        filter.getOperator());
+                null;
+
+        try {
+
+            operator =
+                    FilterOperator.from(
+                            filter.getOperator());
+
+        } catch (Exception ex) {
+
+            errors.add(
+                    "Invalid operator: "
+                            + filter.getOperator());
+        }
 
         Class<?> targetType =
                 getFieldType(
                         filter.getField());
 
         // Validate String operators
-        if (targetType.equals(
+        if (operator != null
+                && targetType.equals(
                 String.class)
                 && operator != FilterOperator.EQUAL
                 && operator
                 != FilterOperator.NOT_EQUAL) {
 
-            throw new BadRequestRuntimeException(
+            errors.add(
                     "Operator "
                             + filter.getOperator()
                             + " is not supported "
@@ -299,10 +308,18 @@ public class TaskSpecification {
         }
 
         // Validate value
-        convertValue(
-                filter.getField(),
-                targetType,
-                filter.getValue());
+        try {
+
+            convertValue(
+                    filter.getField(),
+                    targetType,
+                    filter.getValue());
+
+        } catch (Exception ex) {
+
+            errors.add(
+                    ex.getMessage());
+        }
     }
 
     private static Path<?> getPath(
@@ -453,7 +470,6 @@ public class TaskSpecification {
             FilterDto filter,
             List<String> errors) {
 
-        // Skip null filter silently
         if (filter == null) {
             return true;
         }
@@ -461,7 +477,7 @@ public class TaskSpecification {
         boolean hasError =
                 false;
 
-        // Validate field
+        // Field
         if (isNullOrBlank(
                 filter.getField())) {
 
@@ -472,7 +488,7 @@ public class TaskSpecification {
                     true;
         }
 
-        // Validate operator
+        // Operator
         if (isNullOrBlank(
                 filter.getOperator())) {
 
@@ -483,7 +499,7 @@ public class TaskSpecification {
                     true;
         }
 
-        // Validate value
+        // Value
         if (isNullOrBlank(
                 filter.getValue())) {
 
