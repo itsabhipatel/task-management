@@ -28,10 +28,12 @@ public class TaskSpecification {
                     : filters) {
 
                 if (shouldIgnoreFilter(
-                        filter)) {
+                        filter,
+                        errors)) {
 
                     continue;
                 }
+
                 try {
 
                     validateFilter(
@@ -59,8 +61,14 @@ public class TaskSpecification {
                 for (FilterDto filter
                         : filters) {
 
-                    if (shouldIgnoreFilter(
-                            filter)) {
+                    // Skip invalid filters
+                    if (filter == null
+                            || isNullOrBlank(
+                            filter.getField())
+                            || isNullOrBlank(
+                            filter.getOperator())
+                            || isNullOrBlank(
+                            filter.getValue())) {
 
                         continue;
                     }
@@ -429,31 +437,65 @@ public class TaskSpecification {
                     "Invalid date value: "
                             + value
                             + ". Expected format: "
-                            + "yyyy-MM-ddTHH:mm:ss");
+                            + "yyyy-MMddTHH:mm:ss");
         }
     }
 
     private static boolean shouldIgnoreFilter(
-            FilterDto filter) {
+            FilterDto filter,
+            List<String> errors) {
 
+        // Skip null filter silently
         if (filter == null) {
             return true;
         }
 
-        Object value =
-                filter.getValue();
+        boolean hasError =
+                false;
 
-        // Ignore null
-        if (value == null) {
-            return true;
+        // Validate field
+        if (isNullOrBlank(
+                filter.getField())) {
+
+            errors.add(
+                    "Filter field cannot be null or empty");
+
+            hasError =
+                    true;
         }
 
-        // Convert everything to string
-        String stringValue =
-                value.toString();
+        // Validate operator
+        if (isNullOrBlank(
+                filter.getOperator())) {
 
-        // Ignore "", "   "
-        return stringValue
+            errors.add(
+                    "Filter operator cannot be null or empty");
+
+            hasError =
+                    true;
+        }
+
+        // Validate value
+        if (isNullOrBlank(
+                filter.getValue())) {
+
+            errors.add(
+                    "Filter value cannot be null or empty "
+                            + "for field: "
+                            + filter.getField());
+
+            hasError =
+                    true;
+        }
+
+        return hasError;
+    }
+
+    private static boolean isNullOrBlank(
+            Object value) {
+
+        return value == null
+                || value.toString()
                 .trim()
                 .isEmpty();
     }
