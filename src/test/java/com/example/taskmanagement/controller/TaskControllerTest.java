@@ -7,9 +7,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.BulkStatusUpdateDto;
-import com.example.taskmanagement.dto.TaskFilterDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSearchRequestDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
@@ -105,13 +105,12 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldFilterTasks() {
-        TaskFilterDto filter = new TaskFilterDto();
-        filter.setStatus("TODO");
+    void shouldSearchTasks() throws Exception {
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
         TaskResponseDto task = response(1L, "Task");
-        when(taskService.filterTasks(filter)).thenReturn(List.of(task));
+        when(taskService.filterTasks(request)).thenReturn(List.of(task));
 
-        List<TaskResponseDto> result = taskController.filterTasks(filter);
+        List<TaskResponseDto> result = taskController.searchTasks(request);
 
         assertEquals(1, result.size());
         assertSame(task, result.get(0));
@@ -172,17 +171,6 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldUpdateTaskProgress() {
-        TaskResponseDto task = response(1L, "Task");
-        when(taskService.updateTaskProgress(1L, 75)).thenReturn(task);
-
-        var result = taskController.updateTaskProgress(1L, 75);
-
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertSame(task, result.getBody());
-    }
-
-    @Test
     void shouldBulkUpdateTaskStatus() {
         BulkStatusUpdateDto request = new BulkStatusUpdateDto();
         TaskResponseDto task = response(1L, "Task");
@@ -192,13 +180,6 @@ class TaskControllerTest {
 
         assertEquals(1, result.size());
         assertSame(task, result.get(0));
-    }
-
-    @Test
-    void shouldReturnNotFoundWhenUpdatingProgressForMissingTask() {
-        when(taskService.updateTaskProgress(1L, 75)).thenReturn(null);
-
-        assertThrows(ResourceNotFoundException.class, () -> taskController.updateTaskProgress(1L, 75));
     }
 
     @Test

@@ -5,7 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.dto.ApiErrorResponse;
+import com.example.taskmanagement.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -51,5 +54,42 @@ class GlobalExceptionHandlerTest {
         assertNotNull(body);
         assertEquals(401, body.getStatus());
         assertEquals("Invalid username or password.", body.getMessage());
+    }
+
+    @Test
+    void shouldReturnBadRequestErrorResponse() {
+        when(request.getRequestURI()).thenReturn("/api/tasks/create");
+
+        var response = exceptionHandler.handleBadRequest(
+                new IllegalArgumentException("Invalid request"),
+                request);
+
+        ApiErrorResponse body = response.getBody();
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(body);
+        assertEquals(400, body.getStatus());
+        assertEquals("Invalid request", body.getMessage());
+    }
+
+    @Test
+    void shouldReturnMultipleRuntimeValidationErrors() {
+        var response = exceptionHandler.handleBadRequestRuntimeException(
+                new BadRequestRuntimeException(List.of("First", "Second")));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        Map<?, ?> body = (Map<?, ?>) response.getBody();
+        assertNotNull(body);
+        assertEquals(List.of("First", "Second"), body.get("errors"));
+    }
+
+    @Test
+    void shouldReturnSingleRuntimeValidationError() {
+        var response = exceptionHandler.handleBadRequestRuntimeException(
+                new BadRequestRuntimeException("Only one"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ErrorResponse body = (ErrorResponse) response.getBody();
+        assertNotNull(body);
+        assertEquals("Only one", body.getMessage());
     }
 }

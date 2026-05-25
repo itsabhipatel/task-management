@@ -10,10 +10,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.example.taskmanagement.client.NotificationClient;
 import com.example.taskmanagement.dto.BulkStatusUpdateDto;
-import com.example.taskmanagement.dto.TaskFilterDto;
+import com.example.taskmanagement.dto.FilterDto;
+import com.example.taskmanagement.dto.NotificationRequestDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSearchRequestDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
@@ -21,6 +24,7 @@ import com.example.taskmanagement.entity.Task;
 import com.example.taskmanagement.repository.CategoryRepository;
 import com.example.taskmanagement.repository.EmployeeRepository;
 import com.example.taskmanagement.repository.TaskRepository;
+import com.example.taskmanagement.specification.TaskSpecification;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +51,12 @@ class TaskServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private TaskSpecification taskSpecification;
+
+    @Mock
+    private NotificationClient notificationClient;
 
     @InjectMocks
     private TaskService taskService;
@@ -127,8 +137,9 @@ class TaskServiceTest {
     }
 
     @Test
-    void shouldFilterAllTasksWhenFilterIsNull() {
-        when(taskRepository.findAll()).thenReturn(List.of(task(1L, "Task", "TODO", null, null)));
+    void shouldFilterAllTasksWhenFilterIsNull() throws Exception {
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(task(1L, "Task", "TODO", null, null))));
 
         List<TaskResponseDto> result = taskService.filterTasks(null);
 
@@ -137,13 +148,20 @@ class TaskServiceTest {
     }
 
     @Test
-    void shouldFilterTasksWithSpecification() {
-        TaskFilterDto filter = new TaskFilterDto();
-        filter.setStatus("todo");
-        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
-                .thenReturn(List.of(task(1L, "Filtered", "TODO", null, null)));
+    void shouldFilterTasksWithSpecification() throws Exception {
+        FilterDto filter = new FilterDto();
+        filter.setField("status");
+        filter.setOperator("eq");
+        filter.setValue("TODO");
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
+        request.setFilters(List.of(filter));
+        Specification<Task> specification = (root, query, criteriaBuilder) -> criteriaBuilder.conjunction();
+        when(taskSpecification.filterTasks(any(), any()))
+                .thenReturn(specification);
+        when(taskRepository.findAll(specification, PageRequest.of(0, Integer.MAX_VALUE, Sort.unsorted())))
+                .thenReturn(new PageImpl<>(List.of(task(1L, "Filtered", "TODO", null, null))));
 
-        List<TaskResponseDto> result = taskService.filterTasks(filter);
+        List<TaskResponseDto> result = taskService.filterTasks(request);
 
         assertEquals(1, result.size());
         assertEquals("Filtered", result.get(0).getTitle());
@@ -174,6 +192,7 @@ class TaskServiceTest {
         assertEquals("Details", result.getDescription());
         assertEquals("HIGH", result.getPriority());
         assertEquals(25, result.getProgressPercentage());
+        verify(notificationClient).sendNotification(any(NotificationRequestDto.class));
     }
 
     @Test
@@ -186,6 +205,7 @@ class TaskServiceTest {
         assertEquals("New task", result.getTitle());
         assertNull(result.getEmployeeId());
         assertNull(result.getCategoryId());
+        verify(notificationClient).sendNotification(any(NotificationRequestDto.class));
     }
 
     @Test

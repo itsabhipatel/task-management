@@ -1,5 +1,6 @@
 package com.example.taskmanagement.service;
 
+import com.example.taskmanagement.client.NotificationClient;
 import com.example.taskmanagement.constant.TaskConstants;
 import com.example.taskmanagement.dto.*;
 import com.example.taskmanagement.entity.Category;
@@ -34,6 +35,7 @@ public class TaskService {
     private final CategoryRepository categoryRepository;
 
     private final TaskSpecification taskSpecification;
+    private final NotificationClient notificationClient;
 
     @Value("${task.default-status:" + TaskConstants.STATUS_TODO + "}")
     private String defaultStatus = TaskConstants.STATUS_TODO;
@@ -50,11 +52,13 @@ public class TaskService {
     public TaskService(TaskRepository taskRepository,
                        EmployeeRepository employeeRepository,
                        CategoryRepository categoryRepository,
-                       TaskSpecification taskSpecification) {
+                       TaskSpecification taskSpecification,
+                       NotificationClient notificationClient) {
         this.taskRepository = taskRepository;
         this.employeeRepository = employeeRepository;
         this.categoryRepository = categoryRepository;
         this.taskSpecification = taskSpecification;
+        this.notificationClient = notificationClient;
     }
 
     public List<TaskResponseDto> getAllTasks() {
@@ -308,7 +312,12 @@ public class TaskService {
         setEmployeeAndCategory(task, taskRequestDto);
 
         Task savedTask = taskRepository.save(task);
-        return convertToResponseDto(savedTask);
+        TaskResponseDto responseDto = convertToResponseDto(savedTask);
+        notificationClient.sendNotification(new NotificationRequestDto(
+                responseDto.getId(),
+                responseDto.getTitle(),
+                "Task created successfully."));
+        return responseDto;
     }
 
     public TaskResponseDto updateTask(Long id, TaskRequestDto taskRequestDto) {
@@ -423,6 +432,7 @@ public class TaskService {
         taskResponseDto.setUpdatedDate(task.getUpdatedDate());
         taskResponseDto.setCompletedDate(task.getCompletedDate());
         taskResponseDto.setProgressPercentage(task.getProgressPercentage());
+        taskResponseDto.setOverdue(isOverdue(task));
 
 
         if (task.getEmployee() != null) {
