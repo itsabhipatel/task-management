@@ -10,6 +10,7 @@ import java.util.List;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -101,7 +102,15 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @PostMapping("/create")
+    @PostMapping("/create",
+    consumes = {
+        MediaType.APPLICATION_JSON_VALUE,
+                MediaType.APPLICATION_XML_VALUE
+    },
+    produces = {
+        MediaType.APPLICATION_JSON_VALUE,
+                MediaType.APPLICATION_XML_VALUE
+    })
     public CreateTaskResponseDto createTask( @Valid @RequestBody TaskRequestDto taskRequestDto) {
         return taskService.createTask(taskRequestDto);
     }
