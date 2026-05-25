@@ -241,4 +241,35 @@ class ModelTest {
         assertNotNull(task.getUpdatedDate());
         assertNotNull(task.getCompletedDate());
     }
+
+    @Test
+    void shouldBuildTaskUsingBuilderPattern() {
+        Employee employee = new Employee();
+        employee.setId(1L);
+        Category category = new Category();
+        category.setId(2L);
+        LocalDateTime dueDate = LocalDateTime.of(2026, 5, 20, 12, 0);
+
+        Task task = Task.builder()
+                .id(3L)
+                .title("Task")
+                .description("Details")
+                .status("TODO")
+                .priority("HIGH")
+                .dueDate(dueDate)
+                .progressPercentage(40)
+                .employee(employee)
+                .category(category)
+                .build();
+
+        assertEquals(3L, task.getId());
+        assertEquals("Task", task.getTitle());
+        assertEquals("Details", task.getDescription());
+        assertEquals("TODO", task.getStatus());
+        assertEquals("HIGH", task.getPriority());
+        assertEquals(dueDate, task.getDueDate());
+        assertEquals(40, task.getProgressPercentage());
+        assertSame(employee, task.getEmployee());
+        assertSame(category, task.getCategory());
+    }
 }

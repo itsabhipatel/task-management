@@ -307,7 +307,11 @@ public class TaskService {
     }
 
     public CreateTaskResponseDto createTask(TaskRequestDto taskRequestDto) {
-        Task task = new Task();
+        Task task = Task.builder()
+                .title(taskRequestDto.getTitle())
+                .description(taskRequestDto.getDescription())
+                .dueDate(taskRequestDto.getDueDate())
+                .build();
         applyTaskDetails(task, taskRequestDto);
         setEmployeeAndCategory(task, taskRequestDto);
 
