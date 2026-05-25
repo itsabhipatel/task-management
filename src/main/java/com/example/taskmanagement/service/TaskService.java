@@ -306,18 +306,20 @@ public class TaskService {
         return convertToResponseDtoList(taskRepository.saveAll(tasks));
     }
 
-    public TaskResponseDto createTask(TaskRequestDto taskRequestDto) {
+    public CreateTaskResponseDto createTask(TaskRequestDto taskRequestDto) {
         Task task = new Task();
         applyTaskDetails(task, taskRequestDto);
         setEmployeeAndCategory(task, taskRequestDto);
 
         Task savedTask = taskRepository.save(task);
         TaskResponseDto responseDto = convertToResponseDto(savedTask);
-        notificationClient.sendNotification(new NotificationRequestDto(
+        NotificationResponseDto notificationResponseDto = notificationClient.sendNotification(new NotificationRequestDto(
                 responseDto.getId(),
                 responseDto.getTitle(),
                 "Task created successfully."));
-        return responseDto;
+        return new CreateTaskResponseDto(
+                responseDto,
+                notificationResponseDto);
     }
 
     public TaskResponseDto updateTask(Long id, TaskRequestDto taskRequestDto) {
