@@ -102,7 +102,7 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
-    @PostMapping("/create",
+    @PostMapping(value = "/create",
     consumes = {
         MediaType.APPLICATION_JSON_VALUE,
                 MediaType.APPLICATION_XML_VALUE
