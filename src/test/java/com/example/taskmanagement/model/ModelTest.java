@@ -5,9 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.example.taskmanagement.dto.ApiErrorResponse;
-import com.example.taskmanagement.dto.TaskFilterDto;
+import com.example.taskmanagement.dto.FilterDto;
+import com.example.taskmanagement.dto.NotificationRequestDto;
+import com.example.taskmanagement.dto.NotificationResponseDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
+import com.example.taskmanagement.dto.TaskSearchRequestDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
@@ -124,38 +127,27 @@ class ModelTest {
     }
 
     @Test
-    void shouldSetAndGetTaskFilterFields() {
-        TaskFilterDto filter = new TaskFilterDto();
-        LocalDateTime dueDate = LocalDateTime.of(2026, 5, 20, 12, 0);
-        LocalDateTime createdDate = LocalDateTime.of(2026, 5, 21, 12, 0);
-        LocalDateTime updatedDate = LocalDateTime.of(2026, 5, 22, 12, 0);
-        LocalDateTime completedDate = LocalDateTime.of(2026, 5, 23, 12, 0);
+    void shouldSetAndGetTaskSearchFields() {
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
+        FilterDto filter = new FilterDto();
+        filter.setField("status");
+        filter.setOperator("eq");
+        filter.setValue("TODO");
 
-        filter.setId(1L);
-        filter.setTitle("Task");
-        filter.setDescription("Details");
-        filter.setStatus("todo");
-        filter.setPriority("high");
-        filter.setDueDate(dueDate);
-        filter.setCreatedDate(createdDate);
-        filter.setUpdatedDate(updatedDate);
-        filter.setCompletedDate(completedDate);
-        filter.setProgressPercentage(50);
-        filter.setEmployeeId(2L);
-        filter.setCategoryId(3L);
+        request.setFilters(List.of(filter));
+        request.setSortBy(List.of("title"));
+        request.setSortDirection(List.of("asc"));
+        request.setPage(0);
+        request.setSize(10);
 
-        assertEquals(1L, filter.getId());
-        assertEquals("Task", filter.getTitle());
-        assertEquals("Details", filter.getDescription());
-        assertEquals("todo", filter.getStatus());
-        assertEquals("high", filter.getPriority());
-        assertEquals(dueDate, filter.getDueDate());
-        assertEquals(createdDate, filter.getCreatedDate());
-        assertEquals(updatedDate, filter.getUpdatedDate());
-        assertEquals(completedDate, filter.getCompletedDate());
-        assertEquals(50, filter.getProgressPercentage());
-        assertEquals(2L, filter.getEmployeeId());
-        assertEquals(3L, filter.getCategoryId());
+        assertEquals(List.of(filter), request.getFilters());
+        assertEquals(List.of("title"), request.getSortBy());
+        assertEquals(List.of("asc"), request.getSortDirection());
+        assertEquals(0, request.getPage());
+        assertEquals(10, request.getSize());
+        assertEquals("status", filter.getField());
+        assertEquals("eq", filter.getOperator());
+        assertEquals("TODO", filter.getValue());
     }
 
     @Test
@@ -175,6 +167,27 @@ class ModelTest {
         assertEquals("Not Found", error.getError());
         assertEquals("Task missing", error.getMessage());
         assertEquals("/api/tasks/1", error.getPath());
+    }
+
+    @Test
+    void shouldSetAndGetNotificationFields() {
+        LocalDateTime sentAt = LocalDateTime.of(2026, 5, 25, 11, 0);
+        NotificationRequestDto request = new NotificationRequestDto(1L, "Task", "Created");
+        NotificationResponseDto response = new NotificationResponseDto("SENT", "Done", sentAt);
+
+        request.setTaskId(2L);
+        request.setTitle("Updated task");
+        request.setMessage("Updated");
+        response.setStatus("QUEUED");
+        response.setMessage("Queued");
+        response.setSentAt(sentAt.plusHours(1));
+
+        assertEquals(2L, request.getTaskId());
+        assertEquals("Updated task", request.getTitle());
+        assertEquals("Updated", request.getMessage());
+        assertEquals("QUEUED", response.getStatus());
+        assertEquals("Queued", response.getMessage());
+        assertEquals(sentAt.plusHours(1), response.getSentAt());
     }
 
     @Test
