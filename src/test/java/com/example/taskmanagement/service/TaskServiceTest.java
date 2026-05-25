@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.example.taskmanagement.client.NotificationClient;
 import com.example.taskmanagement.dto.BulkStatusUpdateDto;
+import com.example.taskmanagement.dto.CreateTaskResponseDto;
 import com.example.taskmanagement.dto.FilterDto;
 import com.example.taskmanagement.dto.NotificationRequestDto;
 import com.example.taskmanagement.dto.TaskRequestDto;
@@ -182,8 +183,10 @@ class TaskServiceTest {
             return savedTask;
         });
 
-        TaskResponseDto result = taskService.createTask(request);
+        CreateTaskResponseDto createResult = taskService.createTask(request);
+        TaskResponseDto result = createResult.getTask();
 
+        assertNotNull(createResult);
         assertNotNull(result);
         assertEquals(10L, result.getId());
         assertEquals("New task", result.getTitle());
@@ -200,8 +203,10 @@ class TaskServiceTest {
         TaskRequestDto request = request("New task", "TODO", null, null);
         when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TaskResponseDto result = taskService.createTask(request);
+        CreateTaskResponseDto createResult = taskService.createTask(request);
+        TaskResponseDto result = createResult.getTask();
 
+        assertNotNull(createResult);
         assertEquals("New task", result.getTitle());
         assertNull(result.getEmployeeId());
         assertNull(result.getCategoryId());

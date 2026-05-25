@@ -6,11 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import com.example.taskmanagement.dto.BulkStatusUpdateDto;
-import com.example.taskmanagement.dto.TaskRequestDto;
-import com.example.taskmanagement.dto.TaskResponseDto;
-import com.example.taskmanagement.dto.TaskSearchRequestDto;
-import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.dto.*;
 import com.example.taskmanagement.exception.ResourceNotFoundException;
 import com.example.taskmanagement.service.TaskService;
 import java.util.List;
@@ -143,11 +139,13 @@ class TaskControllerTest {
     void shouldCreateTask() {
         TaskRequestDto request = new TaskRequestDto();
         TaskResponseDto task = response(1L, "Task");
-        when(taskService.createTask(request)).thenReturn(task);
+        NotificationRequestDto notificationRequestDto = new NotificationRequestDto(1L, "Task", "Task created");
+        CreateTaskResponseDto createTaskResponseDto = new CreateTaskResponseDto(task, new NotificationResponseDto());
+        when(taskService.createTask(request)).thenReturn(createTaskResponseDto);
 
-        TaskResponseDto result = taskController.createTask(request);
+        CreateTaskResponseDto result = taskController.createTask(request);
 
-        assertSame(task, result);
+        assertSame(createTaskResponseDto, result);
     }
 
     @Test
