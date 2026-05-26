@@ -20,7 +20,7 @@ import com.example.taskmanagement.entity.AppUser;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
-import com.example.taskmanagement.soap.SummaryCount;
+import com.example.taskmanagement.dto.SummaryCount;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;

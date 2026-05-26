@@ -1,5 +1,6 @@
-package com.example.taskmanagement.soap;
+package com.example.taskmanagement.dto;
 
+import com.example.taskmanagement.controller.TaskSummaryEndpoint;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;

@@ -3,6 +3,9 @@ package com.example.taskmanagement.soap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+import com.example.taskmanagement.controller.TaskSummaryEndpoint;
+import com.example.taskmanagement.dto.GetTaskSummaryRequest;
+import com.example.taskmanagement.dto.GetTaskSummaryResponse;
 import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.service.TaskService;
 import java.util.LinkedHashMap;
