@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.example.taskmanagement.dto.ApiErrorResponse;
+import com.example.taskmanagement.dto.CreateTaskResponseDto;
+import com.example.taskmanagement.dto.ErrorResponse;
 import com.example.taskmanagement.dto.FilterDto;
 import com.example.taskmanagement.dto.NotificationRequestDto;
 import com.example.taskmanagement.dto.NotificationResponseDto;
@@ -18,6 +20,7 @@ import com.example.taskmanagement.entity.AppUser;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
+import com.example.taskmanagement.soap.SummaryCount;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -188,6 +191,29 @@ class ModelTest {
         assertEquals("QUEUED", response.getStatus());
         assertEquals("Queued", response.getMessage());
         assertEquals(sentAt.plusHours(1), response.getSentAt());
+    }
+
+    @Test
+    void shouldSetAndGetErrorAndCreateTaskResponseFields() {
+        ErrorResponse error = new ErrorResponse("Invalid request");
+        error.setMessage("Updated error");
+        TaskResponseDto task = new TaskResponseDto();
+        NotificationResponseDto notification = new NotificationResponseDto();
+        CreateTaskResponseDto createTaskResponse = new CreateTaskResponseDto(task, notification);
+
+        assertEquals("Updated error", error.getMessage());
+        assertSame(task, createTaskResponse.getTask());
+        assertSame(notification, createTaskResponse.getNotification());
+    }
+
+    @Test
+    void shouldCreateSoapSummaryCountModels() {
+        SummaryCount emptyCount = new SummaryCount();
+        SummaryCount count = new SummaryCount("TODO", 2);
+
+        assertNotNull(emptyCount);
+        assertEquals("TODO", count.getName());
+        assertEquals(2, count.getCount());
     }
 
     @Test

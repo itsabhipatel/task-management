@@ -22,6 +22,7 @@ import com.example.taskmanagement.dto.TaskSummaryDto;
 import com.example.taskmanagement.entity.Category;
 import com.example.taskmanagement.entity.Employee;
 import com.example.taskmanagement.entity.Task;
+import com.example.taskmanagement.exception.BadRequestRuntimeException;
 import com.example.taskmanagement.repository.CategoryRepository;
 import com.example.taskmanagement.repository.EmployeeRepository;
 import com.example.taskmanagement.repository.TaskRepository;
@@ -214,6 +215,35 @@ class TaskServiceTest {
     }
 
     @Test
+    void shouldCreateTaskWithDefaultValuesWhenOptionalFieldsAreBlank() {
+        TaskRequestDto request = request("Defaulted task", " ", null, null);
+        request.setPriority(" ");
+        request.setProgressPercentage(null);
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateTaskResponseDto createResult = taskService.createTask(request);
+        TaskResponseDto result = createResult.getTask();
+
+        assertEquals("TODO", result.getStatus());
+        assertEquals("MEDIUM", result.getPriority());
+        assertEquals(0, result.getProgressPercentage());
+    }
+
+    @Test
+    void shouldClampProgressWhenCreatingTask() {
+        TaskRequestDto request = request("Clamped task", "IN_PROGRESS", null, null);
+        request.setProgressPercentage(150);
+        when(taskRepository.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateTaskResponseDto createResult = taskService.createTask(request);
+        TaskResponseDto result = createResult.getTask();
+
+        assertEquals("DONE", result.getStatus());
+        assertEquals(100, result.getProgressPercentage());
+        assertNotNull(result.getCompletedDate());
+    }
+
+    @Test
     void shouldUpdateTask() {
         Task existingTask = task(5L, "Old", "TODO", null, null);
         when(taskRepository.findById(5L)).thenReturn(Optional.of(existingTask));
@@ -331,6 +361,47 @@ class TaskServiceTest {
 
         assertEquals(0, result.getTotalTasks());
         assertEquals(0, result.getAverageProgress());
+    }
+
+    @Test
+    void shouldRejectFilterWhenSortDirectionsDoNotMatchSortFields() {
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
+        request.setSortBy(List.of("title", "status"));
+        request.setSortDirection(List.of("asc"));
+
+        BadRequestRuntimeException exception = assertThrows(
+                BadRequestRuntimeException.class,
+                () -> taskService.filterTasks(request));
+
+        assertEquals("sortBy and sortDirection must have same size", exception.getErrors().get(0));
+    }
+
+    @Test
+    void shouldRejectFilterWithInvalidSortFieldAndDirection() {
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
+        request.setSortBy(List.of("unknown"));
+        request.setSortDirection(List.of("sideways"));
+
+        BadRequestRuntimeException exception = assertThrows(
+                BadRequestRuntimeException.class,
+                () -> taskService.filterTasks(request));
+
+        assertTrue(exception.getErrors().contains("Invalid sortBy field: unknown"));
+        assertTrue(exception.getErrors().contains("Invalid sortDirection: sideways. Supported values: asc, desc"));
+    }
+
+    @Test
+    void shouldRejectFilterWithInvalidPageAndSize() {
+        TaskSearchRequestDto request = new TaskSearchRequestDto();
+        request.setPage(-1);
+        request.setSize(0);
+
+        BadRequestRuntimeException exception = assertThrows(
+                BadRequestRuntimeException.class,
+                () -> taskService.filterTasks(request));
+
+        assertTrue(exception.getErrors().contains("Page number cannot be less than 0"));
+        assertTrue(exception.getErrors().contains("Page size must be greater than 0"));
     }
 
     @Test
