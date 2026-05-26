@@ -113,18 +113,6 @@ class TaskControllerTest {
     }
 
     @Test
-    void shouldReturnTaskSummary() {
-        TaskSummaryDto summary = new TaskSummaryDto();
-        summary.setTotalTasks(10);
-        when(taskService.getTaskSummary()).thenReturn(summary);
-
-        TaskSummaryDto result = taskController.getTaskSummary();
-
-        assertSame(summary, result);
-        assertEquals(10, result.getTotalTasks());
-    }
-
-    @Test
     void shouldReturnOverdueTasks() {
         TaskResponseDto task = response(1L, "Late task");
         when(taskService.getOverdueTasks()).thenReturn(List.of(task));

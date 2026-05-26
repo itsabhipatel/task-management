@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/taskmanagement/soap"
+           xmlns:tns="http://example.com/taskmanagement/soap"
+           elementFormDefault="qualified">
+
+    <xs:element name="GetTaskSummaryRequest">
+        <xs:complexType/>
+    </xs:element>
+
+    <xs:element name="GetTaskSummaryResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="totalTasks" type="xs:long"/>
+                <xs:element name="overdueTasks" type="xs:long"/>
+                <xs:element name="averageProgress" type="xs:double"/>
+                <xs:element name="statusCounts" type="tns:SummaryCount" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="priorityCounts" type="tns:SummaryCount" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="SummaryCount">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="count" type="xs:long"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

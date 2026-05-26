@@ -81,11 +81,6 @@ public class TaskController {
                 .filterTasks(request);
     }
 
-    @GetMapping("/summary")
-    public TaskSummaryDto getTaskSummary() {
-        return taskService.getTaskSummary();
-    }
-
     @GetMapping("/overdue")
     public List<TaskResponseDto> getOverdueTasks() {
         return taskService.getOverdueTasks();
