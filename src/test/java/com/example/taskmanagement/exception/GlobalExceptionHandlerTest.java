@@ -11,10 +11,15 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @ExtendWith(MockitoExtension.class)
 class GlobalExceptionHandlerTest {
@@ -69,6 +74,32 @@ class GlobalExceptionHandlerTest {
         assertNotNull(body);
         assertEquals(400, body.getStatus());
         assertEquals("Invalid request", body.getMessage());
+    }
+
+    @Test
+    void shouldReturnValidationErrorResponse() {
+        when(request.getRequestURI()).thenReturn("/api/tasks/create");
+        Object target = new Object();
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(target, "taskRequestDto");
+        bindingResult.addError(new FieldError("taskRequestDto", "title", "", false, null, null, "Title is required"));
+        MethodArgumentNotValidException exception = new MethodArgumentNotValidException(
+                Mockito.mock(MethodParameter.class),
+                bindingResult);
+
+        var response = exceptionHandler.handleValidationException(exception, request);
+
+        ApiErrorResponse body = response.getBody();
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(body);
+        assertEquals(400, body.getStatus());
+        assertEquals("Validation Failed", body.getError());
+        assertEquals("Request validation failed", body.getMessage());
+        assertEquals("/api/tasks/create", body.getPath());
+        assertEquals(1, body.getValidationErrors().size());
+        assertEquals("title", body.getValidationErrors().get(0).getField());
+        assertEquals("Title is required", body.getValidationErrors().get(0).getMessage());
+        assertEquals("", body.getValidationErrors().get(0).getRejectedValue());
+        assertNotNull(body.getTimestamp());
     }
 
     @Test

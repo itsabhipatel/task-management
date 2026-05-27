@@ -2,9 +2,11 @@ package com.example.taskmanagement.exception;
 
 import com.example.taskmanagement.dto.ApiErrorResponse;
 import com.example.taskmanagement.dto.ErrorResponse;
+import com.example.taskmanagement.dto.ValidationError;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.dao.DataAccessException;
@@ -33,16 +35,42 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid username or password.", request);
     }
 
+    
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
             MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class,
-            IllegalArgumentException.class,
-            MethodArgumentNotValidException.class
+            IllegalArgumentException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequest(Exception exception,
                                                             HttpServletRequest request) {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationException(MethodArgumentNotValidException ex,
+                                                                      HttpServletRequest request) {
+        List<ValidationError> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> {
+                    ValidationError validationError = new ValidationError();
+                    validationError.setField(error.getField());
+                    validationError.setMessage(error.getDefaultMessage());
+                    validationError.setRejectedValue(error.getRejectedValue());
+                    return validationError;
+                })
+                .toList();
+
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.setTimestamp(LocalDateTime.now());
+        response.setStatus(HttpStatus.BAD_REQUEST.value());
+        response.setError("Validation Failed");
+        response.setMessage("Request validation failed");
+        response.setPath(request.getRequestURI());
+        response.setValidationErrors(errors);
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     @ExceptionHandler(DataAccessException.class)

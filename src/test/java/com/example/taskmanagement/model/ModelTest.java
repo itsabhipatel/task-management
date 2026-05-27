@@ -14,6 +14,7 @@ import com.example.taskmanagement.dto.TaskRequestDto;
 import com.example.taskmanagement.dto.TaskResponseDto;
 import com.example.taskmanagement.dto.TaskSearchRequestDto;
 import com.example.taskmanagement.dto.TaskSummaryDto;
+import com.example.taskmanagement.dto.ValidationError;
 import com.example.taskmanagement.dto.auth.LoginRequestDto;
 import com.example.taskmanagement.dto.auth.LoginResponseDto;
 import com.example.taskmanagement.entity.AppUser;
@@ -158,18 +159,27 @@ class ModelTest {
         LocalDateTime timestamp = LocalDateTime.of(2026, 5, 19, 12, 0);
         ApiErrorResponse error = new ApiErrorResponse(timestamp, 400, "Bad Request", "Invalid input", "/api/tasks");
         LocalDateTime newTimestamp = LocalDateTime.of(2026, 5, 19, 13, 0);
+        ValidationError validationError = new ValidationError();
+        validationError.setField("title");
+        validationError.setMessage("Title is required");
+        validationError.setRejectedValue("");
 
         error.setTimestamp(newTimestamp);
         error.setStatus(404);
         error.setError("Not Found");
         error.setMessage("Task missing");
         error.setPath("/api/tasks/1");
+        error.setValidationErrors(List.of(validationError));
 
         assertEquals(newTimestamp, error.getTimestamp());
         assertEquals(404, error.getStatus());
         assertEquals("Not Found", error.getError());
         assertEquals("Task missing", error.getMessage());
         assertEquals("/api/tasks/1", error.getPath());
+        assertEquals(List.of(validationError), error.getValidationErrors());
+        assertEquals("title", validationError.getField());
+        assertEquals("Title is required", validationError.getMessage());
+        assertEquals("", validationError.getRejectedValue());
     }
 
     @Test

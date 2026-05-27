@@ -1,6 +1,8 @@
 package com.example.taskmanagement.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ApiErrorResponse {
 
@@ -9,6 +11,10 @@ public class ApiErrorResponse {
     private String error;
     private String message;
     private String path;
+    private List<ValidationError> validationErrors = new ArrayList<>();
+
+    public ApiErrorResponse() {
+    }
 
     public ApiErrorResponse(LocalDateTime timestamp, int status, String error, String message, String path) {
         this.timestamp = timestamp;
@@ -56,5 +62,13 @@ public class ApiErrorResponse {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public List<ValidationError> getValidationErrors() {
+        return validationErrors;
+    }
+
+    public void setValidationErrors(List<ValidationError> validationErrors) {
+        this.validationErrors = validationErrors;
     }
 }
